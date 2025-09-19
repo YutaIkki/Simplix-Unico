@@ -4,6 +4,8 @@ import time
 import json
 import sqlite3, hashlib
 from werkzeug.security import generate_password_hash, check_password_hash
+import psycopg2
+import os
 
 
 app = Flask(__name__)
@@ -15,12 +17,17 @@ API_SIMULATE = "https://simplix-integration.partner1.com.br/api/Proposal/Simulat
 TOKEN = ""
 TOKEN_EXPIRA = 0
 
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+def get_conn():
+    return psycopg2.connect(DATABASE_URL)
+
 def init_db():
-    conn = sqlite3.connect("users.db")
+    conn = get_conn()
     c = conn.cursor()
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nome TEXT UNIQUE,
             senha TEXT,
             role TEXT DEFAULT 'user',
@@ -33,7 +40,7 @@ def init_db():
     if not c.fetchone():
         admin_user = "Leonardo"
         admin_pass = hash_senha("123456")
-        c.execute("INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
+        c.execute("INSERT INTO users (nome, senha, role, background) VALUES (%s, %s, %s, %s)",
                   (admin_user, admin_pass, "admin", "blue"))
         print("✅ Usuário admin criado: login=Leonardo senha=123456")
 
@@ -41,9 +48,9 @@ def init_db():
     conn.close()
 
 def get_user(nome):
-    conn = sqlite3.connect("users.db")
+    conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE nome = ?", (nome,))
+    c.execute("SELECT * FROM users WHERE nome = %s", (nome,))
     user = c.fetchone()
     conn.close()
     return user
@@ -84,13 +91,14 @@ def register():
         senha = hash_senha(request.form["senha"])
         role = request.form.get("role", "user")
         try:
-            conn = sqlite3.connect("users.db")
+            conn = get_conn()
             c = conn.cursor()
-            c.execute("INSERT INTO users (nome, senha, role) VALUES (?, ?, ?)", (nome, senha, role))
+            c.execute("INSERT INTO users (nome, senha, role) VALUES (%s, %s, %s)", (nome, senha, role))
             conn.commit()
             conn.close()
             return redirect(url_for("gerenciar_usuarios"))
-        except:
+        except Exception as e:
+            print("Erro ao registrar:", e)
             return render_template("register.html", erro="Nome já existe!")
     return render_template("register.html")
 
