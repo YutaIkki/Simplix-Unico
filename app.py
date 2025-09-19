@@ -264,6 +264,7 @@ def consultar_cpf(cpf, tabela=None):
         return {"cpf": cpf, "tabela": tabela, "saldoBruto": 0, "valorLiberado": 0,
                 "situacao": "Erro", "informacao": f"Erro inesperado: {e}", "final": True}
 
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True, port=8600)
