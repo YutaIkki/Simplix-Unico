@@ -2,7 +2,7 @@
 name = "consigtech-usuarios"
 version = "0.1.0"
 description = "Sistema ConsigTech com usuários, tabelas e integração"
-authors = ["Seu Nome <seuemail@dominio.com>"]
+authors = ["Você <email@dominio.com>"]
 
 [tool.poetry.dependencies]
 python = "3.11.9"
