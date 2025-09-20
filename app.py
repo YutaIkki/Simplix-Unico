@@ -33,12 +33,11 @@ def init_db():
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT UNIQUE,
-            senha TEXT,
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            senha TEXT NOT NULL,
             role TEXT DEFAULT 'user',
-            background TEXT DEFAULT 'blue',
-            last_login TEXT
+            ultimo_login TIMESTAMP
         )
     """)
 
