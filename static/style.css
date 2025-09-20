@@ -470,8 +470,8 @@ select option {
   bottom: 20px;
   right: 20px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-direction: column; /* um embaixo do outro */
+  gap: 12px; /* espaço entre os dois */
   z-index: 200;
 }
 
@@ -497,6 +497,7 @@ select option {
   background-color: #4c94e7;
   border-bottom: 4px solid #1565c0;
 }
+
 .user-buttons .btn-gerenciar:hover {
   background-color: #1565c0;
 }
@@ -505,7 +506,9 @@ select option {
   background-color: #e53935;
   border-bottom: 4px solid #b71c1c;
 }
+
 .user-buttons .btn-criar-fixo:hover {
   background-color: #c62828;
 }
+
 
