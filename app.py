@@ -37,8 +37,7 @@ def init_db():
             nome TEXT NOT NULL,
             senha TEXT NOT NULL,
             role TEXT DEFAULT 'user',
-            background TEXT DEFAULT 'blue',
-            last_login TIMESTAMP
+            background TEXT DEFAULT 'blue'
         )
     """)
 
@@ -92,16 +91,6 @@ def login():
             session["user"] = nome
             session["role"] = user[3]
             session["background"] = user[4]
-
-            conn = get_conn()
-            c = conn.cursor()
-            if isinstance(conn, sqlite3.Connection):
-                c.execute("UPDATE users SET last_login = datetime('now') WHERE id = ?", (user[0],))
-            else:
-                c.execute("UPDATE users SET last_login = NOW() WHERE id = %s", (user[0],))
-            conn.commit()
-            conn.close()
-
             return redirect(url_for("index"))
 
         return render_template("login.html", erro="Login inválido")
@@ -138,7 +127,7 @@ def gerenciar_usuarios():
 
     conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT id, nome, role, last_login FROM users")
+    c.execute("SELECT id, nome, role FROM users")
     usuarios = c.fetchall()
     conn.close()
     return render_template("usuarios.html", usuarios=usuarios)

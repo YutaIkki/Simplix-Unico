@@ -63,7 +63,6 @@
           <th>ID</th>
           <th>Nome</th>
           <th>Função</th>
-          <th>Último Login</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -73,7 +72,6 @@
           <td>{{ user[0] }}</td>
           <td>{{ user[1] }}</td>
           <td>{{ user[2] }}</td>
-          <td>{{ user[3] if user[3] else "Nunca logou" }}</td>
           <td class="acoes-btns">
             <a href="/editar/{{ user[0] }}" class="btn btn-editar">Editar</a>
             <form method="post" action="/excluir/{{ user[0] }}" style="display:inline;">
