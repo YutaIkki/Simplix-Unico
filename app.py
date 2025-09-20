@@ -3,7 +3,12 @@ import requests
 import time
 import json
 import sqlite3
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
+try:
+    import psycopg
+except ImportError:
+    psycopg = None
 
 app = Flask(__name__)
 app.secret_key = "chave_secreta"
@@ -14,31 +19,50 @@ API_SIMULATE = "https://simplix-integration.partner1.com.br/api/Proposal/Simulat
 TOKEN = ""
 TOKEN_EXPIRA = 0
 
-DB_FILE = "users.db"
+DATABASE_URL = os.environ.get("DATABASE_URL") 
+DB_FILE = "users.db"  # Fallback local
 
 def get_conn():
+    if DATABASE_URL and psycopg:
+        return psycopg.connect(DATABASE_URL)
     return sqlite3.connect(DB_FILE, check_same_thread=False)
 
 def init_db():
     conn = get_conn()
     c = conn.cursor()
 
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT UNIQUE,
-            senha TEXT,
-            role TEXT DEFAULT 'user',
-            background TEXT DEFAULT 'blue'
-        )
-    """)
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT UNIQUE,
+                senha TEXT,
+                role TEXT DEFAULT 'user',
+                background TEXT DEFAULT 'blue'
+            )
+        """)
+        c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
+    else:
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                nome TEXT UNIQUE,
+                senha TEXT,
+                role TEXT DEFAULT 'user',
+                background TEXT DEFAULT 'blue'
+            )
+        """)
+        c.execute("SELECT * FROM users WHERE role = %s", ("admin",))
 
-    c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
     if not c.fetchone():
         admin_user = "Leonardo"
         admin_pass = hash_senha("123456")
-        c.execute("INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
-                  (admin_user, admin_pass, "admin", "blue"))
+        if isinstance(conn, sqlite3.Connection):
+            c.execute("INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
+                      (admin_user, admin_pass, "admin", "blue"))
+        else:
+            c.execute("INSERT INTO users (nome, senha, role, background) VALUES (%s, %s, %s, %s)",
+                      (admin_user, admin_pass, "admin", "blue"))
         print("✅ Usuário admin criado: login=Leonardo senha=123456")
 
     conn.commit()
@@ -56,7 +80,10 @@ def is_admin():
 def get_user(nome):
     conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE nome = ?", (nome,))
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT * FROM users WHERE nome = ?", (nome,))
+    else:
+        c.execute("SELECT * FROM users WHERE nome = %s", (nome,))
     user = c.fetchone()
     conn.close()
     return user
@@ -89,7 +116,10 @@ def register():
         try:
             conn = get_conn()
             c = conn.cursor()
-            c.execute("INSERT INTO users (nome, senha, role) VALUES (?, ?, ?)", (nome, senha, role))
+            if isinstance(conn, sqlite3.Connection):
+                c.execute("INSERT INTO users (nome, senha, role) VALUES (?, ?, ?)", (nome, senha, role))
+            else:
+                c.execute("INSERT INTO users (nome, senha, role) VALUES (%s, %s, %s)", (nome, senha, role))
             conn.commit()
             conn.close()
             return redirect(url_for("gerenciar_usuarios"))
@@ -117,7 +147,10 @@ def excluir_usuario(user_id):
 
     conn = get_conn()
     c = conn.cursor()
-    c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    else:
+        c.execute("DELETE FROM users WHERE id = %s", (user_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("gerenciar_usuarios"))
@@ -137,17 +170,28 @@ def editar_usuario(user_id):
 
         if nova_senha.strip():
             senha_hash = hash_senha(nova_senha)
-            c.execute("UPDATE users SET nome = ?, senha = ?, background = ? WHERE id = ?",
-                      (novo_nome, senha_hash, novo_background, user_id))
+            if isinstance(conn, sqlite3.Connection):
+                c.execute("UPDATE users SET nome = ?, senha = ?, background = ? WHERE id = ?",
+                          (novo_nome, senha_hash, novo_background, user_id))
+            else:
+                c.execute("UPDATE users SET nome = %s, senha = %s, background = %s WHERE id = %s",
+                          (novo_nome, senha_hash, novo_background, user_id))
         else:
-            c.execute("UPDATE users SET nome = ?, background = ? WHERE id = ?",
-                      (novo_nome, novo_background, user_id))
+            if isinstance(conn, sqlite3.Connection):
+                c.execute("UPDATE users SET nome = ?, background = ? WHERE id = ?",
+                          (novo_nome, novo_background, user_id))
+            else:
+                c.execute("UPDATE users SET nome = %s, background = %s WHERE id = %s",
+                          (novo_nome, novo_background, user_id))
 
         conn.commit()
         conn.close()
         return redirect(url_for("gerenciar_usuarios"))
 
-    c.execute("SELECT id, nome, role, background FROM users WHERE id = ?", (user_id,))
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT id, nome, role, background FROM users WHERE id = ?", (user_id,))
+    else:
+        c.execute("SELECT id, nome, role, background FROM users WHERE id = %s", (user_id,))
     user = c.fetchone()
     conn.close()
     return render_template("editar.html", user=user)
@@ -251,7 +295,7 @@ def consultar_cpf(cpf, tabela=None):
             print(f"[{cpf}] RAW TEXT:\n{txt}")
 
         simulacoes = (data.get("objectReturn", {}) or {}).get("retornoSimulacao", [])
-        
+
         if tabela:
             for sim in simulacoes:
                 if sim.get("tabelaCodigo") == tabela or sim.get("tabelaTitulo") == tabela:
@@ -329,6 +373,7 @@ def consultar_cpf(cpf, tabela=None):
             "informacao": f"Erro inesperado: {e}",
             "final": True
         }
+
 
 init_db()
 
