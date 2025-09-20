@@ -2,118 +2,89 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Gerenciar Usuários</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tomorrow&display=swap" rel="stylesheet">
-    <style>
-        .usuarios-container {
-            max-width: 800px;
-            width: 95%;
-            margin: 100px auto;
-            padding: 30px;
-            border-radius: 20px;
-            background: var(--bg-container);
-            backdrop-filter: blur(12px) saturate(180%);
-            -webkit-backdrop-filter: blur(12px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-            color: var(--cor-texto);
-            animation: fadeIn 0.6s ease-in-out;
-        }
+  <meta charset="UTF-8">
+  <title>Gerenciar Usuários</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow&display=swap" rel="stylesheet">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      color: var(--cor-texto);
+    }
 
-        .usuarios-container h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-family: 'Tomorrow', sans-serif;
-            font-size: 30px;
-        }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+    th {
+      background: rgba(255, 255, 255, 0.15);
+    }
 
-        table th,
-        table td {
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 12px;
-            text-align: center;
-        }
+    .btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+      transition: 0.3s;
+    }
 
-        table th {
-            background: rgba(255, 255, 255, 0.2);
-            font-weight: bold;
-        }
+    .btn-editar {
+      background: #4cafef;
+      color: white;
+    }
 
-        table tr:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
+    .btn-editar:hover {
+      background: #1565c0;
+    }
 
-        .btn-excluir {
-            padding: 6px 14px;
-            border-radius: 6px;
-            border: none;
-            background-color: #e53935;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+    .btn-excluir {
+      background: #e53935;
+      color: white;
+    }
 
-        .btn-excluir:hover {
-            background-color: #c62828;
-        }
-
-        .btn-criar {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            border-radius: 8px;
-            background: #4c94e7;
-            color: white;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-
-        .btn-criar:hover {
-            background: #1565c0;
-        }
-    </style>
+    .btn-excluir:hover {
+      background: #b71c1c;
+    }
+  </style>
 </head>
 
 <body class="{{ session['background'] or 'blue' }}">
-    <div class="usuarios-container">
-        <h2>Gerenciar Usuários</h2>
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Papel</th>
-                <th>Ações</th>
-            </tr>
-            {% for u in usuarios %}
-            <tr>
-                <td>{{ u[0] }}</td>
-                <td>{{ u[1] }}</td>
-                <td>{{ u[2] }}</td>
-                <td class="acoes-btns">
-                    <form action="/editar/{{ u[0] }}" method="get">
-                        <button type="submit" class="btn-azul">Editar</button>
-                    </form>
-                    <form action="/excluir/{{ u[0] }}" method="post">
-                        <button type="submit" class="btn-excluir">Excluir</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-        <div class="acoes-usuarios">
-            <a href="/index" class="btn-voltar">Voltar ao Painel</a>
-            <a href="/register" class="btn-criar">+ Criar Novo Usuário</a>
-        </div>
-    </div>
-</body>
+  <div class="container">
+    <h1>Gerenciar Usuários</h1>
 
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Função</th>
+          <th>Último Login</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in usuarios %}
+        <tr>
+          <td>{{ user[0] }}</td>
+          <td>{{ user[1] }}</td>
+          <td>{{ user[2] }}</td>
+          <td>{{ user[3] if user[3] else "Nunca logou" }}</td>
+          <td class="acoes-btns">
+            <a href="/editar/{{ user[0] }}" class="btn btn-editar">Editar</a>
+            <form method="post" action="/excluir/{{ user[0] }}" style="display:inline;">
+              <button type="submit" class="btn btn-excluir">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <a href="/index" class="btn-voltar">← Voltar</a>
+  </div>
+</body>
 </html>

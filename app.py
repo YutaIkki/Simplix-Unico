@@ -20,7 +20,7 @@ TOKEN = ""
 TOKEN_EXPIRA = 0
 
 DATABASE_URL = os.environ.get("DATABASE_URL") 
-DB_FILE = "users.db"  # Fallback local
+DB_FILE = "users.db"
 
 def get_conn():
     if DATABASE_URL and psycopg:
@@ -38,7 +38,9 @@ def init_db():
                 nome TEXT UNIQUE,
                 senha TEXT,
                 role TEXT DEFAULT 'user',
-                background TEXT DEFAULT 'blue'
+                background TEXT DEFAULT 'blue',
+                last_login TEXT,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
             )
         """)
         c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
@@ -135,7 +137,7 @@ def gerenciar_usuarios():
 
     conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT id, nome, role FROM users")
+    c.execute("SELECT id, nome, role, last_login FROM users")
     usuarios = c.fetchall()
     conn.close()
     return render_template("usuarios.html", usuarios=usuarios)

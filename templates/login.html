@@ -84,6 +84,20 @@
     .link:hover {
       text-decoration: underline;
     }
+
+    .mostrar-senha {
+      display: flex;
+      align-items: center;
+      margin-top: -5px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: #ddd;
+    }
+
+    .mostrar-senha input {
+      margin-right: 6px;
+      width: auto;
+    }
   </style>
 </head>
 
@@ -93,11 +107,24 @@
     {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
     <form method="post" autocomplete="off">
       <input type="text" name="nome" placeholder="Usuário" required autocomplete="username">
-      <input type="password" name="senha" placeholder="Senha" required autocomplete="new-password">
+      
+      <input type="password" id="senha" name="senha" placeholder="Senha" required autocomplete="new-password">
+
+      <div class="mostrar-senha">
+        <input type="checkbox" id="mostrarSenha" onclick="toggleSenha()">
+        <label for="mostrarSenha">Mostrar senha</label>
+      </div>
+
       <button type="submit">Entrar</button>
     </form>
     <a class="link" href="/register">Criar conta</a>
   </div>
-</body>
 
+  <script>
+    function toggleSenha() {
+      const input = document.getElementById("senha");
+      input.type = input.type === "password" ? "text" : "password";
+    }
+  </script>
+</body>
 </html>
