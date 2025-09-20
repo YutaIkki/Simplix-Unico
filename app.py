@@ -2,11 +2,10 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import requests
 import time
 import json
-import sqlite3, hashlib
+import sqlite3
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
 import psycopg2
-import os
-
 
 app = Flask(__name__)
 app.secret_key = "chave_secreta"
@@ -20,58 +19,53 @@ TOKEN_EXPIRA = 0
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_conn():
-    return psycopg2.connect(DATABASE_URL)
+    if DATABASE_URL:
+        return psycopg2.connect(DATABASE_URL)
+    else: 
+        return sqlite3.connect("users.db")
 
 def init_db():
     conn = get_conn()
     c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            nome TEXT UNIQUE,
-            senha TEXT,
-            role TEXT DEFAULT 'user',
-            background TEXT DEFAULT 'blue'
-        )
-    """)
-    conn.commit()
 
-    c.execute("SELECT * FROM users WHERE role = 'admin'")
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT UNIQUE,
+                senha TEXT,
+                role TEXT DEFAULT 'user',
+                background TEXT DEFAULT 'blue'
+            )
+        """)
+        c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
+    else:
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                nome TEXT UNIQUE,
+                senha TEXT,
+                role TEXT DEFAULT 'user',
+                background TEXT DEFAULT 'blue'
+            )
+        """)
+        c.execute("SELECT * FROM users WHERE role = %s", ("admin",))
+
     if not c.fetchone():
         admin_user = "Leonardo"
         admin_pass = hash_senha("123456")
-        c.execute("INSERT INTO users (nome, senha, role, background) VALUES (%s, %s, %s, %s)",
-                  (admin_user, admin_pass, "admin", "blue"))
+        if isinstance(conn, sqlite3.Connection):
+            c.execute("INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
+                      (admin_user, admin_pass, "admin", "blue"))
+        else:
+            c.execute("INSERT INTO users (nome, senha, role, background) VALUES (%s, %s, %s, %s)",
+                      (admin_user, admin_pass, "admin", "blue"))
         print("✅ Usuário admin criado: login=Leonardo senha=123456")
 
     conn.commit()
     conn.close()
 
-def get_user(nome):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE nome = %s", (nome,))
-    user = c.fetchone()
-    conn.close()
-    return user
-
-@app.route("/", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        nome = request.form["nome"]
-        senha = request.form["senha"] 
-        user = get_user(nome)
-
-        if user and verificar_senha(senha, user[2]):
-            session["user"] = nome
-            session["role"] = user[3]
-            session["background"] = user[4]
-            return redirect(url_for("index"))
-
-        return render_template("login.html", erro="Login inválido")
-
-    return render_template("login.html")
-
+# Utilitários
 def hash_senha(senha):
     return generate_password_hash(senha)
 
@@ -81,11 +75,39 @@ def verificar_senha(senha_digitada, senha_hash):
 def is_admin():
     return session.get("role") == "admin"
 
+def get_user(nome):
+    conn = get_conn()
+    c = conn.cursor()
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT * FROM users WHERE nome = ?", (nome,))
+    else:
+        c.execute("SELECT * FROM users WHERE nome = %s", (nome,))
+    user = c.fetchone()
+    conn.close()
+    return user
+
+# Rotas
+@app.route("/", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        nome = request.form["nome"]
+        senha = request.form["senha"]
+        user = get_user(nome)
+
+        if user and verificar_senha(senha, user[2]):
+            session["user"] = nome
+            session["role"] = user[3]
+            session["background"] = user[4]
+            return redirect(url_for("index"))
+
+        return render_template("login.html", erro="Login inválido")
+    return render_template("login.html")
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if "user" not in session or session.get("role") != "admin":
-        return redirect(url_for("index"))  # só admin pode registrar
-    
+        return redirect(url_for("index"))
+
     if request.method == "POST":
         nome = request.form["nome"]
         senha = hash_senha(request.form["senha"])
@@ -93,7 +115,10 @@ def register():
         try:
             conn = get_conn()
             c = conn.cursor()
-            c.execute("INSERT INTO users (nome, senha, role) VALUES (%s, %s, %s)", (nome, senha, role))
+            if isinstance(conn, sqlite3.Connection):
+                c.execute("INSERT INTO users (nome, senha, role) VALUES (?, ?, ?)", (nome, senha, role))
+            else:
+                c.execute("INSERT INTO users (nome, senha, role) VALUES (%s, %s, %s)", (nome, senha, role))
             conn.commit()
             conn.close()
             return redirect(url_for("gerenciar_usuarios"))
@@ -106,10 +131,13 @@ def register():
 def gerenciar_usuarios():
     if "user" not in session or session.get("role") != "admin":
         return redirect(url_for("index"))
-    
-    conn = sqlite3.connect("users.db")
+
+    conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT id, nome, role FROM users")
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT id, nome, role FROM users")
+    else:
+        c.execute("SELECT id, nome, role FROM users")
     usuarios = c.fetchall()
     conn.close()
     return render_template("usuarios.html", usuarios=usuarios)
@@ -118,10 +146,13 @@ def gerenciar_usuarios():
 def excluir_usuario(user_id):
     if "user" not in session or session.get("role") != "admin":
         return redirect(url_for("index"))
-    
-    conn = sqlite3.connect("users.db")
+
+    conn = get_conn()
     c = conn.cursor()
-    c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    else:
+        c.execute("DELETE FROM users WHERE id = %s", (user_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("gerenciar_usuarios"))
@@ -131,7 +162,7 @@ def editar_usuario(user_id):
     if "user" not in session or session.get("role") != "admin":
         return redirect(url_for("index"))
 
-    conn = sqlite3.connect("users.db")
+    conn = get_conn()
     c = conn.cursor()
 
     if request.method == "POST":
@@ -139,19 +170,30 @@ def editar_usuario(user_id):
         nova_senha = request.form["senha"]
         novo_background = request.form["background"]
 
-        if nova_senha.strip():  # se senha foi digitada
-            senha_hash = hash_senha(nova_senha)  # usa hash seguro
-            c.execute("UPDATE users SET nome = ?, senha = ?, background = ? WHERE id = ?",
-                     (novo_nome, senha_hash, novo_background, user_id))
-        else:  # se não mudar senha, só atualiza nome + fundo
-            c.execute("UPDATE users SET nome = ?, background = ? WHERE id = ?",
-                     (novo_nome, novo_background, user_id))
+        if nova_senha.strip():
+            senha_hash = hash_senha(nova_senha)
+            if isinstance(conn, sqlite3.Connection):
+                c.execute("UPDATE users SET nome = ?, senha = ?, background = ? WHERE id = ?",
+                          (novo_nome, senha_hash, novo_background, user_id))
+            else:
+                c.execute("UPDATE users SET nome = %s, senha = %s, background = %s WHERE id = %s",
+                          (novo_nome, senha_hash, novo_background, user_id))
+        else:
+            if isinstance(conn, sqlite3.Connection):
+                c.execute("UPDATE users SET nome = ?, background = ? WHERE id = ?",
+                          (novo_nome, novo_background, user_id))
+            else:
+                c.execute("UPDATE users SET nome = %s, background = %s WHERE id = %s",
+                          (novo_nome, novo_background, user_id))
 
         conn.commit()
         conn.close()
         return redirect(url_for("gerenciar_usuarios"))
 
-    c.execute("SELECT id, nome, role, background FROM users WHERE id = ?", (user_id,))
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT id, nome, role, background FROM users WHERE id = ?", (user_id,))
+    else:
+        c.execute("SELECT id, nome, role, background FROM users WHERE id = %s", (user_id,))
     user = c.fetchone()
     conn.close()
     return render_template("editar.html", user=user)
@@ -168,13 +210,11 @@ def index():
     return render_template("index.html", usuario=session["user"],
                            cor1=session.get("cor1", "#133abb"),
                            cor2=session.get("cor2", "#00e1ff"))
+
 def gerar_token():
     global TOKEN_EXPIRA
     try:
-        dados = {
-            "username": "477f702a-4a6f-4b02-b5eb-afcd38da99f8",
-            "password": "b5iTIZ2n"
-        }
+        dados = {"username": "477f702a-4a6f-4b02-b5eb-afcd38da99f8", "password": "b5iTIZ2n"}
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         resp = requests.post(API_LOGIN, json=dados, headers=headers, timeout=10)
         if resp.status_code == 200 and resp.json().get("success"):
@@ -196,7 +236,18 @@ def obter_token():
 def consultar_cpf_unico():
     data = request.get_json()
     cpf = data.get("cpf", "").strip()
-    tabela = data.get("tabela", "").strip() or "SX1"
+    tabela = data.get("tabela", "").strip()
+
+    if not tabela:
+        return jsonify({
+            "cpf": None,
+            "tabela": None,
+            "saldoBruto": 0,
+            "valorLiberado": 0,
+            "situacao": "Erro",
+            "informacao": "⚠️ Escolha uma tabela antes de consultar",
+            "final": True
+        }), 400
 
     cpf = cpf.zfill(11)
     if not cpf or len(cpf) != 11 or not cpf.isdigit():
@@ -246,31 +297,84 @@ def consultar_cpf(cpf, tabela=None):
             print(f"[{cpf}] RAW TEXT:\n{txt}")
 
         simulacoes = (data.get("objectReturn", {}) or {}).get("retornoSimulacao", [])
+        
+        if tabela:
+            for sim in simulacoes:
+                if sim.get("tabelaCodigo") == tabela or sim.get("tabelaTitulo") == tabela:
+                    detalhes = sim.get("detalhes", {}) or {}
+                    msg_ok = sim.get("mensagem", "") or "Autorizado"
+                    return {
+                        "cpf": cpf,
+                        "tabela": sim.get("tabelaCodigo") or sim.get("tabelaTitulo"),
+                        "saldoBruto": detalhes.get("saldoTotalBloqueado", 0),
+                        "valorLiberado": sim.get("valorLiquido", 0),
+                        "parcelas": detalhes.get("parcelas", []),
+                        "situacao": "Consulta OK",
+                        "informacao": msg_ok,
+                        "final": True
+                    }
 
-        if simulacoes:
-            sim = simulacoes[0]
-            detalhes = sim.get("detalhes", {}) or {}
-            msg_ok = sim.get("mensagem", "") or "Autorizado"
             return {
                 "cpf": cpf,
-                "tabela": sim.get("tabelaCodigo") or sim.get("tabelaTitulo"),
-                "saldoBruto": detalhes.get("saldoTotalBloqueado", 0),
-                "valorLiberado": sim.get("valorLiquido", 0),
+                "tabela": tabela,
+                "saldoBruto": 0,
+                "valorLiberado": 0,
+                "situacao": "Erro",
+                "informacao": f"Tabela {tabela} não encontrada nas simulações",
+                "final": True
+            }
+
+        if simulacoes:
+            todas = []
+            for sim in simulacoes:
+                detalhes = sim.get("detalhes", {}) or {}
+                todas.append({
+                    "tabela": sim.get("tabelaCodigo") or sim.get("tabelaTitulo"),
+                    "saldoBruto": detalhes.get("saldoTotalBloqueado", 0),
+                    "valorLiberado": sim.get("valorLiquido", 0),
+                    "parcelas": detalhes.get("parcelas", []),
+                    "situacao": "Consulta OK",
+                    "informacao": sim.get("mensagem", "") or "Autorizado"
+                })
+            return {
+                "cpf": cpf,
                 "situacao": "Consulta OK",
-                "informacao": msg_ok,
+                "informacao": f"{len(todas)} simulações encontradas",
+                "simulacoes": todas,
                 "final": True
             }
 
         desc = (data.get("objectReturn", {}) or {}).get("description", "") or txt
-        return {"cpf": cpf, "tabela": tabela, "saldoBruto": 0, "valorLiberado": 0,
-                "situacao": "Erro", "informacao": desc, "final": True}
+        return {
+            "cpf": cpf,
+            "tabela": tabela,
+            "saldoBruto": 0,
+            "valorLiberado": 0,
+            "situacao": "Erro",
+            "informacao": desc,
+            "final": True
+        }
 
     except requests.exceptions.ReadTimeout:
-        return {"cpf": cpf, "tabela": tabela, "saldoBruto": 0, "valorLiberado": 0,
-                "situacao": "Erro", "informacao": "Timeout na API", "final": True}
+        return {
+            "cpf": cpf,
+            "tabela": tabela,
+            "saldoBruto": 0,
+            "valorLiberado": 0,
+            "situacao": "Erro",
+            "informacao": "Timeout na API",
+            "final": True
+        }
     except Exception as e:
-        return {"cpf": cpf, "tabela": tabela, "saldoBruto": 0, "valorLiberado": 0,
-                "situacao": "Erro", "informacao": f"Erro inesperado: {e}", "final": True}
+        return {
+            "cpf": cpf,
+            "tabela": tabela,
+            "saldoBruto": 0,
+            "valorLiberado": 0,
+            "situacao": "Erro",
+            "informacao": f"Erro inesperado: {e}",
+            "final": True
+        }
 
 init_db()
 

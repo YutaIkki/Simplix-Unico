@@ -395,14 +395,14 @@ button.vermelho:hover { background-color: #c62828; }
   margin: 0;
 }
 body.blue {
-  --gradiente-inicio: #133abb;
-  --gradiente-fim: #00d4f0;
+  --gradiente-inicio: #0c3bd4;
+  --gradiente-fim: #00e1ff;
   --cor-texto: #fff;
 }
 
-body.dark {
-  --gradiente-inicio: #000000;
-  --gradiente-fim: #434343;
+body.vermelho {
+  --gradiente-inicio: #8a0000;
+  --gradiente-fim: #e29494;
   --cor-texto: #fff;
 }
 
@@ -413,14 +413,14 @@ body.pink {
 }
 
 body.green {
-  --gradiente-inicio: #08701a;
-  --gradiente-fim: #3fcc7e;
-  --cor-texto: #fff;
+  --gradiente-inicio: #00d459;
+  --gradiente-fim: #4ef3eb;
+  --cor-texto: #111111;
 }
 
 body.purple {
-  --gradiente-inicio: #6a11cb;
-  --gradiente-fim: #2575fc;
+  --gradiente-inicio: #6a01da;
+  --gradiente-fim: #04b1e6;
   --cor-texto: #fff;
 }
 
