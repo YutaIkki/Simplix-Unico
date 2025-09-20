@@ -424,6 +424,11 @@ body.purple {
   --cor-texto: #fff;
 }
 
+body.luana {
+  --gradiente-inicio: #cfbddb;
+  --gradiente-fim: #f7edf2;
+  --cor-texto: #000000;
+}
 select {
   width: 50%;
   padding: 12px 15px;
