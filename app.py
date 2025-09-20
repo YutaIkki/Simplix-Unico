@@ -31,40 +31,28 @@ def init_db():
     conn = get_conn()
     c = conn.cursor()
 
-    if isinstance(conn, sqlite3.Connection):
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT UNIQUE,
-                senha TEXT,
-                role TEXT DEFAULT 'user',
-                background TEXT DEFAULT 'blue',
-                last_login TEXT,
-                created_at TEXT DEFAULT (datetime('now','localtime'))
-            )
-        """)
-        c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
-    else:
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                nome TEXT UNIQUE,
-                senha TEXT,
-                role TEXT DEFAULT 'user',
-                background TEXT DEFAULT 'blue'
-            )
-        """)
-        c.execute("SELECT * FROM users WHERE role = %s", ("admin",))
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT UNIQUE,
+            senha TEXT,
+            role TEXT DEFAULT 'user',
+            background TEXT DEFAULT 'blue',
+            last_login TEXT
+        )
+    """)
 
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN last_login TEXT")
+    except Exception:
+        pass  # já existe, ignora
+
+    c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
     if not c.fetchone():
         admin_user = "Leonardo"
         admin_pass = hash_senha("123456")
-        if isinstance(conn, sqlite3.Connection):
-            c.execute("INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
-                      (admin_user, admin_pass, "admin", "blue"))
-        else:
-            c.execute("INSERT INTO users (nome, senha, role, background) VALUES (%s, %s, %s, %s)",
-                      (admin_user, admin_pass, "admin", "blue"))
+        c.execute("INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
+                  (admin_user, admin_pass, "admin", "blue"))
         print("✅ Usuário admin criado: login=Leonardo senha=123456")
 
     conn.commit()
@@ -101,6 +89,13 @@ def login():
             session["user"] = nome
             session["role"] = user[3]
             session["background"] = user[4]
+
+            conn = get_conn()
+            c = conn.cursor()
+            c.execute("UPDATE users SET last_login = datetime('now') WHERE id = ?", (user[0],))
+            conn.commit()
+            conn.close()
+
             return redirect(url_for("index"))
 
         return render_template("login.html", erro="Login inválido")
