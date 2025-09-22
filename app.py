@@ -334,7 +334,10 @@ def consultar_cpf(cpf, tabela=None):
                 "final": True
             }
 
-        desc = (data.get("objectReturn", {}) or {}).get("description", "") or txt
+        desc = (data.get("objectReturn", {}) or {}).get("description", "") \
+                or (data.get("objectReturn", {}) or {}).get("observacao", "") \
+                or "Cliente não autorizou a instituição financeira a realizar a consulta."
+            
         return {
             "cpf": cpf,
             "tabela": tabela,
