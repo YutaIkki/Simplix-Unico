@@ -101,7 +101,7 @@
   </style>
 </head>
 
-<body class="{{ session['background'] or 'blue' }}">
+<body class="{{ session['background'] or '' }}">
   <div class="login-container">
     <h2>Login</h2>
     {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}

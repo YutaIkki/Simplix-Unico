@@ -1,36 +1,28 @@
 :root {
-    --gradiente-inicio: #133abb;
-    --gradiente-fim: #00e1ff;  
-    --cor-texto: #fff;
-    --bg-container: rgba(255, 255, 255, 0.12);
-    --bg-input: rgba(255, 255, 255, 0.15);
-}
+  --gradiente-inicio: #133abb;
+  --gradiente-fim: #00e1ff;  
 
-.dark-mode {
-    --gradiente-inicio: #ff00dd;
-    --gradiente-fim: #000000;
-    --cor-texto: #ffffff;
-    --bg-container: rgba(0,0,0,0.4);
-    --bg-input: rgba(255, 255, 255, 0.08);
-}
+  --gradiente-dark-inicio: #ff00dd;
+  --gradiente-dark-fim: #000000;
 
+  --cor-texto: #fff;
+  --bg-container: rgba(255, 255, 255, 0.12);
+  --bg-input: rgba(255, 255, 255, 0.15);
+}
 
 body, html {
     font-family: 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(270deg, var(--gradiente-inicio), var(--gradiente-fim));
-    background-size: 600% 600%;
-    animation: fundoAnimado 15s ease infinite;
     margin: 0;
     padding: 0;
     min-height: 100vh;
     color: var(--cor-texto);
 }
 
-@keyframes fundoAnimado {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+body.dark-mode {
+  background: linear-gradient(270deg, var(--gradiente-dark-inicio), var(--gradiente-dark-fim));
 }
+
 
 body {
     display: flex;

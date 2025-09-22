@@ -9,8 +9,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
-            --gradiente-inicio: {{cor1}};
-            --gradiente-fim: {{cor2}};
+            --gradiente-inicio: {
+                    {
+                    cor1
+                }
+            }
+
+            ;
+
+            --gradiente-fim: {
+                    {
+                    cor2
+                }
+            }
+
+            ;
         }
 
         .input-wrapper {
@@ -189,7 +202,34 @@
 
             <select id="tabela" name="tabela" class="select-tabela" required>
                 <option value="">Selecione a Tabela</option>
-                <!-- opções -->
+                <option value="SX1.">SX1</option>
+                <option value="SX2.">SX2</option>
+                <option value="SX3.">SX3</option>
+                <option value="SX4">SX4</option>
+                <option value="SX5.">SX5</option>
+                <option value="SX6">SX6</option>
+                <option value="SX7">SX7</option>
+                <option value="SX8.">SX8</option>
+                <option value="SX9">SX9</option>
+                <option value="SX10.">SX10</option>
+                <option value="SX11">SX11</option>
+                <option value="SX12">SX12</option>
+                <option value="SX13">SX13</option>
+                <option value="SX14">SX14</option>
+                <option value="SX15">SX15</option>
+                <option value="SX16">SX16</option>
+                <option value="SX17">SX17</option>
+                <option value="SX18">SX18</option>
+                <option value="SX19">SX19</option>
+                <option value="SX20">SX20</option>
+                <option value="SX21.">SX21</option>
+                <option value="SX1 ESPECIAL1.">SX1 ESPECIAL 1</option>
+                <option value="SX1 SUPER ESPECIAL.">SX1 SUPER ESPECIAL</option>
+                <option value="SX10 ESPECIAL.">SX10 ESPECIAL</option>
+                <option value="SX15 ESPECIAL1">SX15 ESPECIAL 1</option>
+                <option value="SX21 ESPECIAL1">SX21 ESPECIAL 1</option>
+                <option value="SX8 ESPECIAL1">SX8 ESPECIAL 1</option>
+                <option value="SX14 ESPECIAL1">SX14 ESPECIAL 1</option>
             </select>
 
             <div class="button-group">
@@ -262,26 +302,41 @@
 
         colorPicker1.addEventListener("input", async (e) => {
             const corEscolhida = e.target.value;
-            document.documentElement.style.setProperty("--gradiente-inicio", corEscolhida);
-
-            await fetch("/salvar-cor", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cor1: corEscolhida, cor2: colorPicker2.value })
-            });
+            if (document.body.classList.contains("dark-mode")) {
+                document.documentElement.style.setProperty("--gradiente-dark-inicio", corEscolhida);
+                await fetch("/salvar-cor", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ corDark1: corEscolhida, corDark2: colorPicker2.value })
+                });
+            } else {
+                document.documentElement.style.setProperty("--gradiente-inicio", corEscolhida);
+                await fetch("/salvar-cor", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ cor1: corEscolhida, cor2: colorPicker2.value })
+                });
+            }
         });
 
         colorPicker2.addEventListener("input", async (e) => {
             const corEscolhida = e.target.value;
-            document.documentElement.style.setProperty("--gradiente-fim", corEscolhida);
-
-            await fetch("/salvar-cor", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cor1: colorPicker1.value, cor2: corEscolhida })
-            });
+            if (document.body.classList.contains("dark-mode")) {
+                document.documentElement.style.setProperty("--gradiente-dark-fim", corEscolhida);
+                await fetch("/salvar-cor", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ corDark1: colorPicker1.value, corDark2: corEscolhida })
+                });
+            } else {
+                document.documentElement.style.setProperty("--gradiente-fim", corEscolhida);
+                await fetch("/salvar-cor", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ cor1: colorPicker1.value, cor2: corEscolhida })
+                });
+            }
         });
     </script>
 </body>
-
 </html>

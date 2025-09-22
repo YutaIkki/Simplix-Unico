@@ -90,7 +90,16 @@ def login():
         if user and verificar_senha(senha, user[2]):
             session["user"] = nome
             session["role"] = user[3]
-            session["background"] = user[4]
+
+            if user[4] and "," in user[4]:
+                partes = user[4].split(",")
+                session["cor1"], session["cor2"] = partes
+                session["background"] = user[4]
+            else:
+                # senão, aplica padrão azul
+                session["cor1"], session["cor2"] = "#133abb", "#00e1ff"
+                session["background"] = "#133abb,#00e1ff"
+
             return redirect(url_for("index"))
 
         return render_template("login.html", erro="Login inválido")
