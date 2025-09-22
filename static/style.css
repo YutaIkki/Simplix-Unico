@@ -488,48 +488,4 @@ select option {
 .user-buttons .btn-criar-fixo:hover {
   background-color: #c62828;
 }
-.user-buttons {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;  
-  gap: 12px;              
-  z-index: 200;
-}
-
-.user-buttons a {
-  padding: 12px 20px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
-  color: #fff;
-  font-size: 15px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.user-buttons .btn-gerenciar {
-  background-color: #4c94e7;
-  border-bottom: 4px solid #1565c0;
-}
-.user-buttons .btn-gerenciar:hover {
-  background-color: #1565c0;
-}
-
-.user-buttons .btn-criar {
-  background-color: #e53935;
-  border-bottom: 4px solid #b71c1c;
-}
-.user-buttons .btn-criar:hover {
-  background-color: #c62828;
-}
-
 

@@ -197,10 +197,17 @@ def logout():
 def index():
     if "user" not in session:
         return redirect(url_for("login"))
-    return render_template("index.html", usuario=session["user"],
-                           cor1=session.get("cor1", "#133abb"),
-                           cor2=session.get("cor2", "#00e1ff"))
 
+    cor1, cor2 = "#133abb", "#00e1ff" 
+    if session.get("background"):
+        partes = session["background"].split(",")
+        if len(partes) == 2:
+            cor1, cor2 = partes
+
+    return render_template("index.html",
+                           usuario=session["user"],
+                           cor1=cor1,
+                           cor2=cor2)
 def gerar_token():
     global TOKEN_EXPIRA
     try:
@@ -304,13 +311,17 @@ def consultar_cpf(cpf, tabela=None):
                         "final": True
                     }
 
+            desc = (data.get("objectReturn", {}) or {}).get("description", "") \
+                    or (data.get("objectReturn", {}) or {}).get("observacao", "") \
+                    or f"Tabela {tabela} não encontrada nas simulações"
+
             return {
                 "cpf": cpf,
                 "tabela": tabela,
                 "saldoBruto": 0,
                 "valorLiberado": 0,
                 "situacao": "Erro",
-                "informacao": f"Tabela {tabela} não encontrada nas simulações",
+                "informacao": desc,
                 "final": True
             }
 
@@ -337,7 +348,7 @@ def consultar_cpf(cpf, tabela=None):
         desc = (data.get("objectReturn", {}) or {}).get("description", "") \
                 or (data.get("objectReturn", {}) or {}).get("observacao", "") \
                 or "Cliente não autorizou a instituição financeira a realizar a consulta."
-            
+
         return {
             "cpf": cpf,
             "tabela": tabela,
@@ -369,6 +380,32 @@ def consultar_cpf(cpf, tabela=None):
             "final": True
         }
 
+@app.route("/salvar-cor", methods=["POST"])
+def salvar_cor():
+    if "user" not in session:
+        return jsonify({"erro": "Não logado"}), 403
+
+    cor1 = request.json.get("cor1")
+    cor2 = request.json.get("cor2")
+    usuario = session["user"]
+
+    conn = get_conn()
+    c = conn.cursor()
+
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("UPDATE users SET background = ? WHERE nome = ?", 
+                  (f"{cor1},{cor2}", usuario))
+    else:
+        c.execute("UPDATE users SET background = %s WHERE nome = %s", 
+                  (f"{cor1},{cor2}", usuario))
+
+    conn.commit()
+    conn.close()
+
+    session["cor1"] = cor1
+    session["cor2"] = cor2
+
+    return jsonify({"ok": True})
 
 init_db()
 
