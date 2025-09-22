@@ -6,6 +6,7 @@
   <title>Gerenciar Usuários</title>
   <link rel="stylesheet" href="/static/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow&display=swap" rel="stylesheet">
+  
   <style>
     table {
       width: 100%;
@@ -14,7 +15,8 @@
       color: var(--cor-texto);
     }
 
-    th, td {
+    th,
+    td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -53,7 +55,7 @@
   </style>
 </head>
 
-<body class="{{ session['background'] or '' }}">
+<body class="pagina">
   <div class="container">
     <h1>Gerenciar Usuários</h1>
 
@@ -72,11 +74,13 @@
           <td>{{ user[0] }}</td>
           <td>{{ user[1] }}</td>
           <td>{{ user[2] }}</td>
-          <td class="acoes-btns">
-            <a href="/editar/{{ user[0] }}" class="btn btn-editar">Editar</a>
-            <form method="post" action="/excluir/{{ user[0] }}" style="display:inline;">
-              <button type="submit" class="btn btn-excluir">Excluir</button>
-            </form>
+          <td>
+            <div class="acoes-btns">
+              <a href="/editar/{{ user[0] }}" class="btn btn-editar">Editar</a>
+              <form method="post" action="/excluir/{{ user[0] }}">
+                <button type="submit" class="btn btn-excluir">Excluir</button>
+              </form>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -85,4 +89,5 @@
     <a href="/index" class="btn-voltar">← Voltar</a>
   </div>
 </body>
+
 </html>

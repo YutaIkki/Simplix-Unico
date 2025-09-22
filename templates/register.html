@@ -74,7 +74,7 @@
     }
   </style>
 </head>
-<body class="{{ session['background'] or '' }}">
+<body class="pagina">
   <div class="register-container">
     <h2>Criar Usuário</h2>
     {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
@@ -88,7 +88,7 @@
       <button type="submit">Registrar</button>
     </form>
     <a class="link" href="/usuarios">Gerenciar Usuários</a>
-    <a href="/usuarios" class="btn-voltar">Voltar</a>
+    <a href="/index" class="btn-voltar">Voltar</a>
   </div>
 </body>
 </html>

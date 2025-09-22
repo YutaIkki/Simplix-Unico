@@ -8,24 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Tomorrow&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        :root {
-            --gradiente-inicio: {
-                    {
-                    cor1
-                }
-            }
-
-            ;
-
-            --gradiente-fim: {
-                    {
-                    cor2
-                }
-            }
-
-            ;
-        }
-
         .input-wrapper {
             position: relative;
             width: 100%;
@@ -46,13 +28,8 @@
         }
 
         @keyframes spin {
-            from {
-                transform: translateY(-50%) rotate(0deg);
-            }
-
-            to {
-                transform: translateY(-50%) rotate(360deg);
-            }
+            from { transform: translateY(-50%) rotate(0deg); }
+            to { transform: translateY(-50%) rotate(360deg); }
         }
 
         #toggle-theme {
@@ -86,50 +63,10 @@
             pointer-events: none;
         }
 
-        #colorPicker1,
-        #colorPicker2 {
-            position: static;
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-            background: transparent;
-            -webkit-appearance: none;
-            appearance: none;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        #colorPicker1::-webkit-color-swatch-wrapper,
-        #colorPicker2::-webkit-color-swatch-wrapper {
-            padding: 0;
-            border-radius: 6px;
-        }
-
-        #colorPicker1::-webkit-color-swatch,
-        #colorPicker2::-webkit-color-swatch {
-            border: none;
-            border-radius: 6px;
-        }
-
-        #colorPicker1:hover,
-        #colorPicker2:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
-        }
-
         .topo-direita {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        #colorPicker1 {
-            right: 140px;
-        }
-
-        #colorPicker2 {
-            right: 90px;
         }
 
         .user-buttons {
@@ -153,33 +90,21 @@
             gap: 8px;
         }
 
-        .btn-gerenciar {
-            background-color: #4c94e7;
-        }
+        .btn-gerenciar { background-color: #4c94e7; }
+        .btn-gerenciar:hover { background-color: #1565c0; }
 
-        .btn-gerenciar:hover {
-            background-color: #1565c0;
-        }
-
-        .btn-criar-fixo {
-            background-color: #e74c3c;
-        }
-
-        .btn-criar-fixo:hover {
-            background-color: #c0392b;
-        }
+        .btn-criar-fixo { background-color: #e74c3c; }
+        .btn-criar-fixo:hover { background-color: #c0392b; }
     </style>
 </head>
 
-<body class="{{ session['background'] or 'blue' }}">
+<body>
     <header class="topo">
         <div class="topo-esquerda">
             <img src="/static/img/logo.png" alt="Logo">
             <span class="nome-empresa">Bem-vindo, {{ usuario }}</span>
         </div>
         <div class="topo-direita">
-            <input type="color" id="colorPicker1" value="{{ session.get('cor1', '#133abb') }}">
-            <input type="color" id="colorPicker2" value="{{ session.get('cor2', '#00e1ff') }}">
             <a href="/logout" class="btn-sair"><i class="fa fa-sign-out-alt"></i> Sair</a>
         </div>
     </header>
@@ -255,8 +180,6 @@
         const btnLimpar = document.getElementById("btn-limpar");
         const spinner = document.getElementById("loading");
         const toggleTheme = document.getElementById("toggle-theme");
-        const colorPicker1 = document.getElementById("colorPicker1");
-        const colorPicker2 = document.getElementById("colorPicker2");
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -299,44 +222,7 @@
             icon.classList.toggle("fa-moon");
             icon.classList.toggle("fa-sun");
         });
-
-        colorPicker1.addEventListener("input", async (e) => {
-            const corEscolhida = e.target.value;
-            if (document.body.classList.contains("dark-mode")) {
-                document.documentElement.style.setProperty("--gradiente-dark-inicio", corEscolhida);
-                await fetch("/salvar-cor", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ corDark1: corEscolhida, corDark2: colorPicker2.value })
-                });
-            } else {
-                document.documentElement.style.setProperty("--gradiente-inicio", corEscolhida);
-                await fetch("/salvar-cor", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ cor1: corEscolhida, cor2: colorPicker2.value })
-                });
-            }
-        });
-
-        colorPicker2.addEventListener("input", async (e) => {
-            const corEscolhida = e.target.value;
-            if (document.body.classList.contains("dark-mode")) {
-                document.documentElement.style.setProperty("--gradiente-dark-fim", corEscolhida);
-                await fetch("/salvar-cor", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ corDark1: colorPicker1.value, corDark2: corEscolhida })
-                });
-            } else {
-                document.documentElement.style.setProperty("--gradiente-fim", corEscolhida);
-                await fetch("/salvar-cor", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ cor1: colorPicker1.value, cor2: corEscolhida })
-                });
-            }
-        });
     </script>
 </body>
+
 </html>

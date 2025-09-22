@@ -37,9 +37,14 @@ def init_db():
             nome TEXT NOT NULL,
             senha TEXT NOT NULL,
             role TEXT DEFAULT 'user',
-            background TEXT DEFAULT 'blue'
+            background TEXT DEFAULT '#133abb,#00e1ff'
         )
     """)
+
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("UPDATE users SET background = ? WHERE background = ?", ("#133abb,#00e1ff", "blue"))
+    else:
+        c.execute("UPDATE users SET background = %s WHERE background = %s", ("#133abb,#00e1ff", "blue"))
 
     if isinstance(conn, sqlite3.Connection):
         c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
@@ -51,14 +56,15 @@ def init_db():
         admin_pass = hash_senha("123456")
         if isinstance(conn, sqlite3.Connection):
             c.execute("INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
-                      (admin_user, admin_pass, "admin", "blue"))
+                      (admin_user, admin_pass, "admin", "#133abb,#00e1ff"))
         else:
             c.execute("INSERT INTO users (nome, senha, role, background) VALUES (%s, %s, %s, %s)",
-                      (admin_user, admin_pass, "admin", "blue"))
+                      (admin_user, admin_pass, "admin", "#133abb,#00e1ff"))
         print("✅ Usuário admin criado: login=Leonardo senha=123456")
 
     conn.commit()
     conn.close()
+
 
 def hash_senha(senha):
     return generate_password_hash(senha)
@@ -90,19 +96,10 @@ def login():
         if user and verificar_senha(senha, user[2]):
             session["user"] = nome
             session["role"] = user[3]
-
-            if user[4] and "," in user[4]:
-                partes = user[4].split(",")
-                session["cor1"], session["cor2"] = partes
-                session["background"] = user[4]
-            else:
-                # senão, aplica padrão azul
-                session["cor1"], session["cor2"] = "#133abb", "#00e1ff"
-                session["background"] = "#133abb,#00e1ff"
-
             return redirect(url_for("index"))
 
         return render_template("login.html", erro="Login inválido")
+
     return render_template("login.html")
 
 @app.route("/register", methods=["GET", "POST"])
@@ -207,16 +204,14 @@ def index():
     if "user" not in session:
         return redirect(url_for("login"))
 
-    cor1, cor2 = "#133abb", "#00e1ff" 
-    if session.get("background"):
-        partes = session["background"].split(",")
-        if len(partes) == 2:
-            cor1, cor2 = partes
+    cor1 = session.get("cor1", "#133abb")
+    cor2 = session.get("cor2", "#00e1ff")
 
     return render_template("index.html",
                            usuario=session["user"],
                            cor1=cor1,
                            cor2=cor2)
+
 def gerar_token():
     global TOKEN_EXPIRA
     try:
@@ -388,33 +383,6 @@ def consultar_cpf(cpf, tabela=None):
             "informacao": f"Erro inesperado: {e}",
             "final": True
         }
-
-@app.route("/salvar-cor", methods=["POST"])
-def salvar_cor():
-    if "user" not in session:
-        return jsonify({"erro": "Não logado"}), 403
-
-    cor1 = request.json.get("cor1")
-    cor2 = request.json.get("cor2")
-    usuario = session["user"]
-
-    conn = get_conn()
-    c = conn.cursor()
-
-    if isinstance(conn, sqlite3.Connection):
-        c.execute("UPDATE users SET background = ? WHERE nome = ?", 
-                  (f"{cor1},{cor2}", usuario))
-    else:
-        c.execute("UPDATE users SET background = %s WHERE nome = %s", 
-                  (f"{cor1},{cor2}", usuario))
-
-    conn.commit()
-    conn.close()
-
-    session["cor1"] = cor1
-    session["cor2"] = cor2
-
-    return jsonify({"ok": True})
 
 init_db()
 
