@@ -384,7 +384,16 @@ def consultar_cpf(cpf, tabela=None):
             "final": True
         }
 
-init_db()
+@app.before_request
+def ensure_db():
+    if not hasattr(app, "_db_initialized"):
+        try:
+            init_db()
+            print("✅ Banco inicializado (uma única vez)")
+        except Exception as e:
+            print(f"⚠️ Erro ao inicializar banco: {e}")
+        app._db_initialized = True 
 
 if __name__ == "__main__":
     app.run(debug=True, port=8600)
+
