@@ -1,14 +1,14 @@
 :root {
-    --gradiente-inicio: #133abb;
-    --gradiente-fim: #00e1ff;  
+    --gradiente-inicio: #f0a400;
+    --gradiente-fim: #2b005c;  
     --cor-texto: #fff;
     --bg-container: rgba(255, 255, 255, 0.12);
     --bg-input: rgba(255, 255, 255, 0.15);
 }
 
 .dark-mode {
-    --gradiente-inicio: #ff00dd;
-    --gradiente-fim: #000000;
+    --gradiente-inicio: #23005c;
+    --gradiente-fim: #a30000;
     --cor-texto: #ffffff;
     --bg-container: rgba(0,0,0,0.4);
     --bg-input: rgba(255, 255, 255, 0.08);
@@ -20,14 +20,14 @@ body.pagina {
     align-items: flex-start;
     padding-top: 100px;
     min-height: 100vh;
-    background: linear-gradient(270deg, var(--gradiente-inicio), var(--gradiente-fim), #7a00ec);
+    background: linear-gradient(270deg, var(--gradiente-inicio), var(--gradiente-fim), #ffa600);
     background-size: 600% 600%;
     animation: fundoAnimado 25s ease infinite;
 }
 
 body, html {
     font-family: 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(270deg, var(--gradiente-inicio), var(--gradiente-fim), #7a00ec);
+    background: linear-gradient(270deg, var(--gradiente-inicio), var(--gradiente-fim), #41007e);
     background-size: 600% 600%;
     animation: fundoAnimado 25s ease infinite;
     margin: 0;
@@ -137,9 +137,9 @@ body {
 }
 
 h1 {
-    font-size: 35px;
+    font-size: 45px;
     margin: 20px 0 30px;
-    font-family: 'Tomorrow', sans-serif;
+    font-family: 'Creepster', sans-serif;
     color: var(--cor-texto);
 }
 
