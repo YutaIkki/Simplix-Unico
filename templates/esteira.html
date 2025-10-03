@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Esteira de Propostas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="pagina">
+  <div class="esteira-container">
+    <h1>Esteira de Propostas</h1>
+    <table class="tabela">
+      <thead>
+        <tr>
+          <th>CPF</th>
+          <th>Nome</th>
+          <th>Valor</th>
+          <th>Status</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cpf, nome, valor, status, data in propostas %}
+        <tr>
+          <td>{{ cpf }}</td>
+          <td>{{ nome }}</td>
+          <td>R$ {{ valor }}</td>
+          <td>
+            <span class="status 
+              {% if 'Enviada' in status %}status-enviada
+              {% elif 'Análise' in status %}status-analise
+              {% elif 'Aprovada' in status %}status-aprovada
+              {% elif 'Reprovada' in status %}status-reprovada
+              {% else %}status-enviada{% endif %}">
+              {{ status }}
+            </span>
+          </td>
+          <td>{{ data }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <a href="/index"><button class="btn-voltar">Voltar</button></a>
+  </div>
+</body>
+</html>

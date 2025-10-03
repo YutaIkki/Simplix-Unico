@@ -29,8 +29,13 @@
         }
 
         @keyframes spin {
-            from { transform: translateY(-50%) rotate(0deg); }
-            to { transform: translateY(-50%) rotate(360deg); }
+            from {
+                transform: translateY(-50%) rotate(0deg);
+            }
+
+            to {
+                transform: translateY(-50%) rotate(360deg);
+            }
         }
 
         #toggle-theme {
@@ -91,11 +96,21 @@
             gap: 8px;
         }
 
-        .btn-gerenciar { background-color: #4c94e7; }
-        .btn-gerenciar:hover { background-color: #1565c0; }
+        .btn-gerenciar {
+            background-color: #4c94e7;
+        }
 
-        .btn-criar-fixo { background-color: #e74c3c; }
-        .btn-criar-fixo:hover { background-color: #c0392b; }
+        .btn-gerenciar:hover {
+            background-color: #1565c0;
+        }
+
+        .btn-criar-fixo {
+            background-color: #e74c3c;
+        }
+
+        .btn-criar-fixo:hover {
+            background-color: #c0392b;
+        }
     </style>
 </head>
 
@@ -112,8 +127,10 @@
 
     {% if session['role'] == 'admin' %}
     <div class="user-buttons">
-        <a href="/usuarios" class="btn-gerenciar"><i class="fa fa-users"></i> Gerenciar Usuários</a>
-        <a href="/register" class="btn-criar-fixo"><i class="fa fa-user-plus"></i> Criar Usuário</a>
+        <a href="/usuarios" class="btn-glass azul"><i class="fa fa-users"></i> Gerenciar Usuários</a>
+        <a href="/register" class="btn-glass vermelho"><i class="fa fa-user-plus"></i> Criar Usuário</a>
+        <a href="/cadastrar-proposta" class="btn-glass verde"><i class="fa fa-plus"></i> Cadastrar Proposta</a>
+        <a href="/esteira" class="btn-glass roxo"><i class="fa fa-list"></i> Esteira de Propostas</a>
     </div>
     {% endif %}
 
@@ -174,6 +191,9 @@
         </div>
     </div>
     <button id="toggle-theme"><i class="fa fa-moon"></i></button>
+    {% if session['role'] != 'admin' %}
+    <a href="/cadastrar-proposta" class="btn-cadastrar-glass">Cadastrar Proposta</a>
+    {% endif %}
 
     <script>
         const form = document.getElementById("form-consulta");

@@ -3,7 +3,7 @@ import requests
 import time
 import json
 import sqlite3
-import os
+import os, re
 from werkzeug.security import generate_password_hash, check_password_hash
 try:
     import psycopg
@@ -33,11 +33,21 @@ def init_db():
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            senha TEXT NOT NULL,
+            role TEXT DEFAULT 'user',
+            background TEXT DEFAULT '#133abb,#00e1ff',
+            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """ if isinstance(conn, sqlite3.Connection) else """
+        CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             nome TEXT NOT NULL,
             senha TEXT NOT NULL,
             role TEXT DEFAULT 'user',
-            background TEXT DEFAULT '#133abb,#00e1ff'
+            background TEXT DEFAULT '#133abb,#00e1ff',
+            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
@@ -45,6 +55,26 @@ def init_db():
         c.execute("UPDATE users SET background = ? WHERE background = ?", ("#133abb,#00e1ff", "blue"))
     else:
         c.execute("UPDATE users SET background = %s WHERE background = %s", ("#133abb,#00e1ff", "blue"))
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS propostas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cpf TEXT,
+            nome TEXT,
+            valor REAL,
+            status TEXT,
+            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """ if isinstance(conn, sqlite3.Connection) else """
+        CREATE TABLE IF NOT EXISTS propostas (
+            id SERIAL PRIMARY KEY,
+            cpf TEXT,
+            nome TEXT,
+            valor REAL,
+            status TEXT,
+            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 
     if isinstance(conn, sqlite3.Connection):
         c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
@@ -393,6 +423,151 @@ def ensure_db():
         except Exception as e:
             print(f"⚠️ Erro ao inicializar banco: {e}")
         app._db_initialized = True 
+
+API_CREATE = "https://simplix-integration.partner1.com.br/api/Proposal/Create"
+
+def normalizar_cpf(cpf):
+    cpf = re.sub(r'\D', '', cpf)
+    return cpf.zfill(11)     
+
+def normalizar_data(data):
+    if not data:
+        return ""
+    data = re.sub(r'\D', '', data)
+    if len(data) == 8:
+        return f"{data[4:8]}-{data[2:4]}-{data[0:2]}"
+    return data
+
+def normalizar_telefone(telefone):
+    return re.sub(r'\D', '', telefone) 
+
+def normalizar_valor(valor):
+    if not valor:
+        return 0.0
+    valor = valor.replace(".", "").replace(",", ".")
+    try:
+        return float(valor)
+    except:
+        return 0.0
+
+@app.route("/cadastrar-proposta", methods=["GET", "POST"])
+def cadastrar_proposta():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        nome = request.form.get("nome", "").strip()
+        email = request.form.get("email", "").strip()
+        cpf = normalizar_cpf(request.form.get("cpf", ""))
+        telefone = normalizar_telefone(request.form.get("telefone", ""))
+        data_nasc = normalizar_data(request.form.get("dataNascimento", ""))
+        cep = request.form.get("cep", "").strip()
+        logradouro = request.form.get("logradouro", "").strip()
+        numero = request.form.get("numero", "").strip()
+        bairro = request.form.get("bairro", "").strip()
+        cidade = request.form.get("cidade", "").strip()
+        estado = request.form.get("estado", "").strip()
+        valor = normalizar_valor(request.form.get("valor", ""))
+
+        if not nome or not cpf or not data_nasc or valor <= 0:
+            return render_template("cadastrar.html",
+                                   resposta={"msg": "⚠️ Preencha todos os campos obrigatórios: Nome, CPF, Data de Nascimento e Valor."})
+
+        conn = get_conn()
+        c = conn.cursor()
+        if isinstance(conn, sqlite3.Connection):
+            c.execute("INSERT INTO propostas (cpf, nome, valor, status) VALUES (?, ?, ?, ?)",
+                      (cpf, nome, valor, "Enviada"))
+        else:
+            c.execute("INSERT INTO propostas (cpf, nome, valor, status) VALUES (%s, %s, %s, %s)",
+                      (cpf, nome, valor, "Enviada"))
+        conn.commit()
+        conn.close()
+
+        payload = {
+            "cliente": {
+                "nome": nome,
+                "email": email,
+                "cpf": cpf,
+                "telefone": telefone,
+                "dataDeNascimento": data_nasc,
+                "endereco": {
+                    "cep": cep,
+                    "logradouro": logradouro,
+                    "numero": numero,
+                    "bairro": bairro,
+                    "cidade": cidade,
+                    "estado": estado
+                }
+            },
+            "operacao": {
+                "simulationId": "123e4567-e89b-12d3-a456-426614174000",
+                "periodos": [
+                    {
+                        "dataRepasse": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                        "valor": valor
+                    }
+                ]
+            },
+            "callback": {
+                "url": "https://simplix-unico.onrender.com/simplix/callback",
+                "method": "POST"
+            },
+            "loginDigitador": session["user"]
+        }
+
+        try:
+            headers = {
+                "Authorization": f"Bearer {obter_token()}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+            resp = requests.post(API_CREATE, json=payload, headers=headers, timeout=30)
+
+            if resp.status_code == 200:
+                print(f"[Simplix] Proposta enviada com sucesso: {resp.json()}")
+                msg = "✅ Proposta cadastrada e enviada para Simplix!"
+            else:
+                print(f"[Simplix] Erro {resp.status_code}: {resp.text}")
+                msg = f"⚠️ Proposta salva, mas falhou no envio para Simplix ({resp.status_code})"
+
+        except Exception as e:
+            print(f"[Simplix] Erro inesperado: {e}")
+            msg = "⚠️ Proposta salva, mas falhou no envio para Simplix"
+
+        return render_template("cadastrar.html", resposta={"msg": msg})
+
+    return render_template("cadastrar.html")
+
+@app.route("/simplix/callback", methods=["POST"])
+def simplix_callback():
+    dados = request.json
+    cpf = dados.get("cliente", {}).get("cpf", "desconhecido")
+    status = dados.get("status", "Atualizado")
+
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("UPDATE propostas SET status=? WHERE cpf=?", (status, cpf))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"ok": True})
+
+@app.route("/esteira")
+def esteira():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    if session.get("role") != "admin":
+        return redirect(url_for("index"))
+
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT cpf, nome, valor, status, data_criacao FROM propostas ORDER BY data_criacao DESC")
+    propostas = c.fetchall()
+    conn.close()
+
+    return render_template("esteira.html", propostas=propostas)
 
 if __name__ == "__main__":
     app.run(debug=True, port=8600)
