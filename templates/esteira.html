@@ -4,6 +4,28 @@
   <meta charset="UTF-8">
   <title>Esteira de Propostas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .paginacao {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: var(--cor-texto);
+    }
+    .paginacao .links a {
+      margin: 0 5px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--cor-texto);
+      transition: 0.3s;
+    }
+    .paginacao .links a:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  </style>
 </head>
 <body class="pagina">
   <div class="esteira-container">
@@ -41,6 +63,21 @@
         {% endfor %}
       </tbody>
     </table>
+
+    <div class="paginacao">
+      <span>Página {{ page }} de {{ total_pages }} — Total de {{ total }} propostas</span>
+      <div class="links">
+        {% if page > 1 %}
+          <a href="{{ url_for('esteira', page=1) }}">« Primeira</a>
+          <a href="{{ url_for('esteira', page=page-1) }}">‹ Anterior</a>
+        {% endif %}
+
+        {% if page < total_pages %}
+          <a href="{{ url_for('esteira', page=page+1) }}">Próxima ›</a>
+          <a href="{{ url_for('esteira', page=total_pages) }}">Última »</a>
+        {% endif %}
+      </div>
+    </div>
 
     <a href="/index"><button class="btn-voltar">Voltar</button></a>
   </div>

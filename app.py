@@ -97,6 +97,17 @@ def init_db():
         except: pass
         try: c.execute("ALTER TABLE propostas ADD COLUMN usuario TEXT")
         except: pass
+    else:
+        try: c.execute("ALTER TABLE propostas ADD COLUMN valor_contrato REAL")
+        except: pass
+        try: c.execute("ALTER TABLE propostas ADD COLUMN valor_liquido REAL")
+        except: pass
+        try: c.execute("ALTER TABLE propostas ADD COLUMN data_status TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        except: pass
+        try: c.execute("ALTER TABLE propostas ADD COLUMN data_pagamento TEXT")
+        except: pass
+        try: c.execute("ALTER TABLE propostas ADD COLUMN usuario TEXT")
+        except: pass
 
     if isinstance(conn, sqlite3.Connection):
         c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
@@ -613,26 +624,47 @@ def esteira():
     if session.get("role") != "admin":
         return redirect(url_for("index"))
 
+    page = int(request.args.get("page", 1))
+    per_page = 20 
+    offset = (page - 1) * per_page
+
     conn = get_conn()
     c = conn.cursor()
 
     if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT COUNT(*) FROM propostas")
+    else:
+        c.execute("SELECT COUNT(*) FROM propostas")
+    total = c.fetchone()[0]
+
+    if isinstance(conn, sqlite3.Connection):
         c.execute("""
-            SELECT cpf, nome, valor, status, data_criacao, valor_contrato, valor_liquido, data_status, usuario 
-            FROM propostas 
+            SELECT cpf, nome, valor, status, data_criacao, valor_contrato, valor_liquido, data_status, usuario
+            FROM propostas
             ORDER BY data_criacao DESC
-        """)
+            LIMIT ? OFFSET ?
+        """, (per_page, offset))
     else:
         c.execute("""
-            SELECT cpf, nome, valor, status, data_criacao, valor_contrato, valor_liquido, data_status, usuario 
-            FROM propostas 
+            SELECT cpf, nome, valor, status, data_criacao, valor_contrato, valor_liquido, data_status, usuario
+            FROM propostas
             ORDER BY data_criacao DESC
-        """)
+            LIMIT %s OFFSET %s
+        """, (per_page, offset))
 
     propostas = c.fetchall()
     conn.close()
 
-    return render_template("esteira.html", propostas=propostas)
+    total_pages = (total + per_page - 1) // per_page
+
+    return render_template(
+        "esteira.html",
+        propostas=propostas,
+        page=page,
+        total=total,
+        per_page=per_page,
+        total_pages=total_pages
+    )
 
 if __name__ == "__main__":
     app.run(debug=True, port=8600)
