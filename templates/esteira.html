@@ -16,14 +16,15 @@
           <th>Valor</th>
           <th>Status</th>
           <th>Data</th>
+          <th>Usuário</th>
         </tr>
       </thead>
       <tbody>
-        {% for cpf, nome, valor, status, data in propostas %}
+        {% for cpf, nome, valor, status, data, usuario in propostas %}
         <tr>
           <td>{{ cpf }}</td>
           <td>{{ nome }}</td>
-          <td>R$ {{ valor }}</td>
+          <td>R$ {{ "%.2f"|format(valor|default(0)) }}</td>
           <td>
             <span class="status 
               {% if 'Enviada' in status %}status-enviada
@@ -35,6 +36,7 @@
             </span>
           </td>
           <td>{{ data }}</td>
+          <td>{{ usuario or "-" }}</td>
         </tr>
         {% endfor %}
       </tbody>

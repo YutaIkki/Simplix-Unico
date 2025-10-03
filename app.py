@@ -62,8 +62,13 @@ def init_db():
             cpf TEXT,
             nome TEXT,
             valor REAL,
+            valor_contrato REAL,
+            valor_liquido REAL,
             status TEXT,
-            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            data_status TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            data_pagamento TEXT,
+            usuario TEXT
         )
     """ if isinstance(conn, sqlite3.Connection) else """
         CREATE TABLE IF NOT EXISTS propostas (
@@ -71,10 +76,27 @@ def init_db():
             cpf TEXT,
             nome TEXT,
             valor REAL,
+            valor_contrato REAL,
+            valor_liquido REAL,
             status TEXT,
-            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            data_status TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            data_pagamento TEXT,
+            usuario TEXT
         )
     """)
+
+    if isinstance(conn, sqlite3.Connection):
+        try: c.execute("ALTER TABLE propostas ADD COLUMN valor_contrato REAL")
+        except: pass
+        try: c.execute("ALTER TABLE propostas ADD COLUMN valor_liquido REAL")
+        except: pass
+        try: c.execute("ALTER TABLE propostas ADD COLUMN data_status TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        except: pass
+        try: c.execute("ALTER TABLE propostas ADD COLUMN data_pagamento TEXT")
+        except: pass
+        try: c.execute("ALTER TABLE propostas ADD COLUMN usuario TEXT")
+        except: pass
 
     if isinstance(conn, sqlite3.Connection):
         c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
@@ -85,16 +107,19 @@ def init_db():
         admin_user = "Leonardo"
         admin_pass = hash_senha("123456")
         if isinstance(conn, sqlite3.Connection):
-            c.execute("INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
-                      (admin_user, admin_pass, "admin", "#133abb,#00e1ff"))
+            c.execute(
+                "INSERT INTO users (nome, senha, role, background) VALUES (?, ?, ?, ?)",
+                (admin_user, admin_pass, "admin", "#133abb,#00e1ff"),
+            )
         else:
-            c.execute("INSERT INTO users (nome, senha, role, background) VALUES (%s, %s, %s, %s)",
-                      (admin_user, admin_pass, "admin", "#133abb,#00e1ff"))
+            c.execute(
+                "INSERT INTO users (nome, senha, role, background) VALUES (%s, %s, %s, %s)",
+                (admin_user, admin_pass, "admin", "#133abb,#00e1ff"),
+            )
         print("✅ Usuário admin criado: login=Leonardo senha=123456")
 
     conn.commit()
     conn.close()
-
 
 def hash_senha(senha):
     return generate_password_hash(senha)
@@ -473,14 +498,23 @@ def cadastrar_proposta():
             return render_template("cadastrar.html",
                                    resposta={"msg": "⚠️ Preencha todos os campos obrigatórios: Nome, CPF, Data de Nascimento e Valor."})
 
+        usuario_logado = session["user"]
+        agora = time.strftime("%Y-%m-%d %H:%M:%S")
+
         conn = get_conn()
         c = conn.cursor()
         if isinstance(conn, sqlite3.Connection):
-            c.execute("INSERT INTO propostas (cpf, nome, valor, status) VALUES (?, ?, ?, ?)",
-                      (cpf, nome, valor, "Enviada"))
+            c.execute("""
+                INSERT INTO propostas 
+                (cpf, nome, valor, valor_contrato, valor_liquido, status, data_status, usuario) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (cpf, nome, valor, valor, valor, "Enviada", agora, usuario_logado))
         else:
-            c.execute("INSERT INTO propostas (cpf, nome, valor, status) VALUES (%s, %s, %s, %s)",
-                      (cpf, nome, valor, "Enviada"))
+            c.execute("""
+                INSERT INTO propostas 
+                (cpf, nome, valor, valor_contrato, valor_liquido, status, data_status, usuario) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (cpf, nome, valor, valor, valor, "Enviada", agora, usuario_logado))
         conn.commit()
         conn.close()
 
@@ -513,7 +547,7 @@ def cadastrar_proposta():
                 "url": "https://simplix-unico.onrender.com/simplix/callback",
                 "method": "POST"
             },
-            "loginDigitador": session["user"]
+            "loginDigitador": usuario_logado
         }
 
         try:
@@ -541,13 +575,31 @@ def cadastrar_proposta():
 
 @app.route("/simplix/callback", methods=["POST"])
 def simplix_callback():
-    dados = request.json
-    cpf = dados.get("cliente", {}).get("cpf", "desconhecido")
+    dados = request.json or {}
+
+    cliente = dados.get("cliente", {})
+    cpf = (cliente.get("cpf") or "").zfill(11)
     status = dados.get("status", "Atualizado")
+    valor_contrato = dados.get("valorContrato") or 0
+    valor_liquido = dados.get("valorLiquido") or 0
+    data_status = time.strftime("%Y-%m-%d %H:%M:%S")
 
     conn = get_conn()
     c = conn.cursor()
-    c.execute("UPDATE propostas SET status=? WHERE cpf=?", (status, cpf))
+
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("""
+            UPDATE propostas 
+            SET status = ?, valor_contrato = ?, valor_liquido = ?, data_status = ? 
+            WHERE cpf = ?
+        """, (status, valor_contrato, valor_liquido, data_status, cpf))
+    else:
+        c.execute("""
+            UPDATE propostas 
+            SET status = %s, valor_contrato = %s, valor_liquido = %s, data_status = %s 
+            WHERE cpf = %s
+        """, (status, valor_contrato, valor_liquido, data_status, cpf))
+
     conn.commit()
     conn.close()
 
@@ -563,7 +615,20 @@ def esteira():
 
     conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT cpf, nome, valor, status, data_criacao FROM propostas ORDER BY data_criacao DESC")
+
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("""
+            SELECT cpf, nome, valor, status, data_criacao, valor_contrato, valor_liquido, data_status, usuario 
+            FROM propostas 
+            ORDER BY data_criacao DESC
+        """)
+    else:
+        c.execute("""
+            SELECT cpf, nome, valor, status, data_criacao, valor_contrato, valor_liquido, data_status, usuario 
+            FROM propostas 
+            ORDER BY data_criacao DESC
+        """)
+
     propostas = c.fetchall()
     conn.close()
 
