@@ -25,11 +25,43 @@
     .paginacao .links a:hover {
       background: rgba(255, 255, 255, 0.3);
     }
+    .buscar-cpf {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .buscar-cpf input {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      width: 200px;
+    }
+    .buscar-cpf button {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      background: #4cafef;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .buscar-cpf button:hover {
+      background: #1565c0;
+    }
   </style>
 </head>
 <body class="pagina">
   <div class="esteira-container">
     <h1>Esteira de Propostas</h1>
+
+    <form method="get" action="{{ url_for('esteira') }}" class="buscar-cpf">
+      <label for="cpf">Buscar CPF:</label>
+      <input type="text" id="cpf" name="cpf" value="{{ request.args.get('cpf', '') }}" placeholder="Digite o CPF">
+      <button type="submit">Buscar</button>
+    </form>
+
     <table class="tabela">
       <thead>
         <tr>
@@ -68,13 +100,13 @@
       <span>Página {{ page }} de {{ total_pages }} — Total de {{ total }} propostas</span>
       <div class="links">
         {% if page > 1 %}
-          <a href="{{ url_for('esteira', page=1) }}">« Primeira</a>
-          <a href="{{ url_for('esteira', page=page-1) }}">‹ Anterior</a>
+          <a href="{{ url_for('esteira', page=1, cpf=request.args.get('cpf')) }}">« Primeira</a>
+          <a href="{{ url_for('esteira', page=page-1, cpf=request.args.get('cpf')) }}">‹ Anterior</a>
         {% endif %}
 
         {% if page < total_pages %}
-          <a href="{{ url_for('esteira', page=page+1) }}">Próxima ›</a>
-          <a href="{{ url_for('esteira', page=total_pages) }}">Última »</a>
+          <a href="{{ url_for('esteira', page=page+1, cpf=request.args.get('cpf')) }}">Próxima ›</a>
+          <a href="{{ url_for('esteira', page=total_pages, cpf=request.args.get('cpf')) }}">Última »</a>
         {% endif %}
       </div>
     </div>

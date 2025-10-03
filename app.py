@@ -199,9 +199,14 @@ def gerenciar_usuarios():
 
     conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT id, nome, role FROM users")
+    
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT id, nome, role FROM users ORDER BY id ASC")
+    else:
+        c.execute("SELECT id, nome, role FROM users ORDER BY id ASC")
     usuarios = c.fetchall()
     conn.close()
+
     return render_template("usuarios.html", usuarios=usuarios)
 
 @app.route("/excluir/<int:user_id>", methods=["POST"])
@@ -625,46 +630,55 @@ def esteira():
         return redirect(url_for("index"))
 
     page = int(request.args.get("page", 1))
-    per_page = 20 
-    offset = (page - 1) * per_page
+    per_page = 20
+    cpf_filtro = request.args.get("cpf", "").strip()
 
     conn = get_conn()
     c = conn.cursor()
 
     if isinstance(conn, sqlite3.Connection):
-        c.execute("SELECT COUNT(*) FROM propostas")
+        if cpf_filtro:
+            c.execute("SELECT COUNT(*) FROM propostas WHERE cpf LIKE ?", (f"%{cpf_filtro}%",))
+        else:
+            c.execute("SELECT COUNT(*) FROM propostas")
     else:
-        c.execute("SELECT COUNT(*) FROM propostas")
-    total = c.fetchone()[0]
+        if cpf_filtro:
+            c.execute("SELECT COUNT(*) FROM propostas WHERE cpf LIKE %s", (f"%{cpf_filtro}%",))
+        else:
+            c.execute("SELECT COUNT(*) FROM propostas")
 
+    total = c.fetchone()[0]
+    total_pages = max(1, -(-total // per_page))
+    offset = (page - 1) * per_page
     if isinstance(conn, sqlite3.Connection):
-        c.execute("""
-            SELECT cpf, nome, valor, status, data_criacao, valor_contrato, valor_liquido, data_status, usuario
-            FROM propostas
-            ORDER BY data_criacao DESC
-            LIMIT ? OFFSET ?
-        """, (per_page, offset))
+        if cpf_filtro:
+            c.execute("""SELECT cpf, nome, valor, status, data_criacao, usuario 
+                         FROM propostas 
+                         WHERE cpf LIKE ?
+                         ORDER BY data_criacao DESC 
+                         LIMIT ? OFFSET ?""", (f"%{cpf_filtro}%", per_page, offset))
+        else:
+            c.execute("""SELECT cpf, nome, valor, status, data_criacao, usuario 
+                         FROM propostas 
+                         ORDER BY data_criacao DESC 
+                         LIMIT ? OFFSET ?""", (per_page, offset))
     else:
-        c.execute("""
-            SELECT cpf, nome, valor, status, data_criacao, valor_contrato, valor_liquido, data_status, usuario
-            FROM propostas
-            ORDER BY data_criacao DESC
-            LIMIT %s OFFSET %s
-        """, (per_page, offset))
+        if cpf_filtro:
+            c.execute("""SELECT cpf, nome, valor, status, data_criacao, usuario 
+                         FROM propostas 
+                         WHERE cpf LIKE %s
+                         ORDER BY data_criacao DESC 
+                         LIMIT %s OFFSET %s""", (f"%{cpf_filtro}%", per_page, offset))
+        else:
+            c.execute("""SELECT cpf, nome, valor, status, data_criacao, usuario 
+                         FROM propostas 
+                         ORDER BY data_criacao DESC 
+                         LIMIT %s OFFSET %s""", (per_page, offset))
 
     propostas = c.fetchall()
     conn.close()
 
-    total_pages = (total + per_page - 1) // per_page
-
-    return render_template(
-        "esteira.html",
-        propostas=propostas,
-        page=page,
-        total=total,
-        per_page=per_page,
-        total_pages=total_pages
-    )
+    return render_template("esteira.html", propostas=propostas, page=page, total_pages=total_pages, total=total)
 
 if __name__ == "__main__":
     app.run(debug=True, port=8600)
