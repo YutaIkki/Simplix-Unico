@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Conclusão da Proposta</title>
-  <link rel="stylesheet" href="/static/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@600&display=swap" rel="stylesheet">
   <style>
     body {
@@ -37,7 +36,13 @@
 
     p {
       font-size: 16px;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
+    }
+
+    .info {
+      font-size: 15px;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 25px;
     }
 
     .btn {
@@ -65,20 +70,38 @@
     .btn-voltar {
       background: #666;
       color: #fff;
-      margin-top: 20px;
+      margin-top: 25px;
     }
 
     .btn-voltar:hover {
       background: #444;
     }
 
-    .id-box {
-      font-size: 14px;
+    .btn-atualizar {
+      background: linear-gradient(90deg, #ffae00, #ff7b00);
       color: #fff;
-      opacity: 0.8;
       margin-top: 10px;
     }
 
+    .btn-atualizar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(255,200,0,0.7);
+    }
+
+    .id-box {
+      font-size: 14px;
+      color: #fff;
+      opacity: 0.9;
+      margin-top: 10px;
+    }
+
+    .msg-aguarde {
+      color: #ffecb3;
+      font-size: 15px;
+      margin-top: 10px;
+      font-weight: 500;
+      text-shadow: 0 0 8px rgba(0,0,0,0.2);
+    }
   </style>
 </head>
 <body>
@@ -86,18 +109,40 @@
     <h1>Proposta enviada com sucesso!</h1>
     <p>Os dados foram transmitidos para análise pela Simplix.</p>
 
-    {% if link_assinatura %}
-      <p>O cliente pode assinar o contrato clicando abaixo:</p>
-      <a href="{{ link_assinatura }}" target="_blank" class="btn btn-assinatura">🔗 Acessar Link de Assinatura</a>
-      {% if id_proposta %}
-        <div class="id-box">ID: <strong>{{ id_proposta }}</strong></div>
+    <div id="link-box">
+      {% if link_assinatura %}
+        <p>O cliente pode assinar o contrato clicando abaixo:</p>
+        <a href="{{ link_assinatura }}" target="_blank" class="btn btn-assinatura">Link de Assinatura</a>
+        {% if id_proposta %}
+          <div class="id-box">ID da Proposta: <strong>{{ id_proposta }}</strong></div>
+        {% endif %}
+      {% else %}
+        <p>O Simplix está processando sua proposta...</p>
+        <div class="msg-aguarde">Link ainda não disponível, atualize em alguns instantes.</div>
+        <button class="btn btn-atualizar" onclick="verificarStatus()">Atualizar link</button>
       {% endif %}
-    {% else %}
-      <p>O link de assinatura será gerado assim que o Simplix concluir a análise.</p>
-    {% endif %}
+    </div>
 
     <br>
-    <a href="/index" class="btn btn-voltar">⬅️ Voltar ao Início</a>
+    <a href="/index" class="btn btn-voltar">Voltar ao Início</a>
   </div>
+
+  <script>
+    async function verificarStatus() {
+      const cpf = "{{ cpf }}";
+      const resp = await fetch(`/verificar-status?cpf=${cpf}`);
+      const data = await resp.json();
+
+      if (data.link_assinatura) {
+        document.getElementById("link-box").innerHTML = `
+          <p>O cliente pode assinar o contrato clicando abaixo:</p>
+          <a href="${data.link_assinatura}" target="_blank" class="btn btn-assinatura">Link de Assinatura</a>
+          <div class="id-box">ID da Proposta: <strong>${data.id_proposta}</strong></div>
+        `;
+      } else {
+        alert("Ainda não há link de assinatura disponível. Tente novamente em alguns instantes.");
+      }
+    }
+  </script>
 </body>
 </html>

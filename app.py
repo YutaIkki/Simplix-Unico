@@ -640,27 +640,47 @@ def enviar_proposta():
         data_resp = resp.json()
         print(f"[Simplix Produção] Resposta: {resp.status_code} | {json.dumps(data_resp, indent=2, ensure_ascii=False)}")
 
-        # 🔗 Captura link e ID da proposta
         link_assinatura = (
-            data_resp.get("objectReturn", {}).get("signatureUrl") or
-            data_resp.get("objectReturn", {}).get("urlAssinatura")
+            data_resp.get("objectReturn", {}).get("signatureUrl")
+            or data_resp.get("objectReturn", {}).get("urlAssinatura")
         )
         id_proposta = (
-            data_resp.get("objectReturn", {}).get("proposalId") or
-            data_resp.get("objectReturn", {}).get("idProposta")
+            data_resp.get("objectReturn", {}).get("proposalId")
+            or data_resp.get("objectReturn", {}).get("idProposta")
         )
 
-        return jsonify({
-            "ok": True,
-            "status": resp.status_code,
-            "resposta": data_resp,
-            "link_assinatura": link_assinatura,
-            "id_proposta": id_proposta
-        })
+        return render_template(
+            "cadastrar_proposta_conclusao.html",
+            link_assinatura=link_assinatura,
+            id_proposta=id_proposta,
+            cpf=cpf
+        )
 
     except Exception as e:
-        print(f"Erro ao enviar proposta: {e}")
-        return jsonify({"ok": False, "erro": str(e)})
+        print(f" Erro ao enviar proposta: {e}")
+        return render_template(
+            "cadastrar_proposta_conclusao.html",
+            link_assinatura=None,
+            id_proposta=None,
+            cpf=cpf
+        )
+
+@app.route("/verificar-status")
+def verificar_status():
+    cpf = request.args.get("cpf")
+    conn = get_conn()
+    c = conn.cursor()
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT link_assinatura, id_proposta FROM propostas WHERE cpf = ?", (cpf,))
+    else:
+        c.execute("SELECT link_assinatura, id_proposta FROM propostas WHERE cpf = %s", (cpf,))
+    row = c.fetchone()
+    conn.close()
+
+    if row and row[0]:
+        return jsonify({"link_assinatura": row[0], "id_proposta": row[1]})
+    return jsonify({"link_assinatura": None})
+
 
 @app.route("/editar_proposta/<int:proposta_id>", methods=["GET", "POST"])
 def editar_proposta(proposta_id):
