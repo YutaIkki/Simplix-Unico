@@ -622,31 +622,44 @@ def enviar_proposta():
         "operacao": {
             "simulationId": data.get("simulationId") or cliente.get("simulationId"),
             "periodos": [
-                {
-                    "dataRepasse": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                    "valor": float(cliente.get("valor", 0))
-                }
+                {"dataRepasse": time.strftime("%Y-%m-%dT%H:%M:%S"), "valor": float(cliente.get("valor", 0))}
             ]
         },
         "callback": {"url": callback_url, "method": "POST"},
         "loginDigitador": session.get("user", "sistema")
     }
 
-    print(f"\033[94m[Simplix Produção]\033[0m Callback dinâmico: {callback_url}")
-    print(f"\033[96m[Payload Enviado]\033[0m {json.dumps(payload, indent=2, ensure_ascii=False)}")
+    headers = {
+        "Authorization": f"Bearer {obter_token()}",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
 
     try:
-        headers = {
-            "Authorization": f"Bearer {obter_token()}",
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
         resp = requests.post(API_CREATE, json=payload, headers=headers, timeout=30)
-        cor = "\033[92m" if resp.status_code == 200 else "\033[91m"
-        print(f"{cor}[Simplix Produção] Resposta: {resp.status_code}\033[0m | {resp.text}")
-        return jsonify({"ok": True, "status": resp.status_code, "resposta": resp.json()})
+        data_resp = resp.json()
+        print(f"[Simplix Produção] Resposta: {resp.status_code} | {json.dumps(data_resp, indent=2, ensure_ascii=False)}")
+
+        # 🔗 Captura link e ID da proposta
+        link_assinatura = (
+            data_resp.get("objectReturn", {}).get("signatureUrl") or
+            data_resp.get("objectReturn", {}).get("urlAssinatura")
+        )
+        id_proposta = (
+            data_resp.get("objectReturn", {}).get("proposalId") or
+            data_resp.get("objectReturn", {}).get("idProposta")
+        )
+
+        return jsonify({
+            "ok": True,
+            "status": resp.status_code,
+            "resposta": data_resp,
+            "link_assinatura": link_assinatura,
+            "id_proposta": id_proposta
+        })
+
     except Exception as e:
-        print(f"\033[91m[Erro Simplix]\033[0m {e}")
+        print(f"Erro ao enviar proposta: {e}")
         return jsonify({"ok": False, "erro": str(e)})
 
 @app.route("/editar_proposta/<int:proposta_id>", methods=["GET", "POST"])
