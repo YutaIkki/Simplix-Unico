@@ -595,6 +595,8 @@ def enviar_proposta():
     cpf = data.get("cpf")
     tabela = data.get("tabela")
 
+    callback_url = request.host_url.rstrip("/") + "/simplix/callback"
+
     payload = {
         "cliente": {
             "nome": cliente.get("nome"),
@@ -620,12 +622,18 @@ def enviar_proposta():
         "operacao": {
             "simulationId": data.get("simulationId") or cliente.get("simulationId"),
             "periodos": [
-                {"dataRepasse": time.strftime("%Y-%m-%dT%H:%M:%S"), "valor": float(cliente.get("valor", 0))}
+                {
+                    "dataRepasse": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "valor": float(cliente.get("valor", 0))
+                }
             ]
         },
-        "callback": {"url": "https://simplix-unico.onrender.com/simplix/callback", "method": "POST"},
+        "callback": {"url": callback_url, "method": "POST"},
         "loginDigitador": session.get("user", "sistema")
     }
+
+    print(f"\033[94m[Simplix Produção]\033[0m Callback dinâmico: {callback_url}")
+    print(f"\033[96m[Payload Enviado]\033[0m {json.dumps(payload, indent=2, ensure_ascii=False)}")
 
     try:
         headers = {
@@ -633,15 +641,12 @@ def enviar_proposta():
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
-        resp = requests.post(
-            API_CREATE,
-            json=payload,
-            headers=headers,
-            timeout=30
-        )
-        print(f"[Simplix Produção] Resposta: {resp.status_code} | {resp.text}")
+        resp = requests.post(API_CREATE, json=payload, headers=headers, timeout=30)
+        cor = "\033[92m" if resp.status_code == 200 else "\033[91m"
+        print(f"{cor}[Simplix Produção] Resposta: {resp.status_code}\033[0m | {resp.text}")
         return jsonify({"ok": True, "status": resp.status_code, "resposta": resp.json()})
     except Exception as e:
+        print(f"\033[91m[Erro Simplix]\033[0m {e}")
         return jsonify({"ok": False, "erro": str(e)})
 
 @app.route("/editar_proposta/<int:proposta_id>", methods=["GET", "POST"])
