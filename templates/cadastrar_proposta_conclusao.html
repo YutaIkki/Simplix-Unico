@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Etapa 4 - Conclusão</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(40deg, var(--gradiente-inicio), var(--gradiente-fim));
+      font-family: 'Tomorrow', sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: 70px auto;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 50px;
+      border-radius: 25px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.9s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stepper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      margin: 40px auto 60px;
+      position: relative;
+      max-width: 900px;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+      transition: all 0.3s ease;
+    }
+
+    .circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .step.active .circle {
+      background: linear-gradient(135deg, #00e1ff, #00ffa3);
+      color: #000;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+      border: none;
+      transform: scale(1.1);
+    }
+
+    .step.completed .circle {
+      background: linear-gradient(135deg, #00ff7f, #b3ff00);
+      color: #000;
+      border: none;
+    }
+
+    .step span {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #fff;
+      font-weight: bold;
+      text-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+    }
+
+    .line {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .line::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #00e1ff, #00ff7f);
+      transition: width 0.5s ease-in-out;
+    }
+
+    .success-icon {
+      font-size: 70px;
+      color: #00ff99;
+      animation: pulse 1.3s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); opacity: 0.9; }
+      to { transform: scale(1.1); opacity: 1; }
+    }
+
+    h1 {
+      margin-top: 15px;
+      text-shadow: 0 0 8px rgba(255,255,255,0.3);
+    }
+
+    p {
+      font-size: 18px;
+      margin-top: 15px;
+      color: #fff;
+      opacity: 0.9;
+    }
+
+    .btn-esteira {
+      margin-top: 40px;
+      padding: 12px 30px;
+      background: linear-gradient(90deg, #00b09b, #96c93d);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'Tomorrow', sans-serif;
+      transition: 0.3s;
+    }
+
+    .btn-esteira:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(0, 255, 100, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="stepper" data-step="4">
+      <div class="step completed" id="etapa1">
+        <div class="circle"><i class="fa fa-list"></i></div>
+        <span>Simulação</span>
+      </div>
+      <div class="line"></div>
+      <div class="step completed" id="etapa2">
+        <div class="circle"><i class="fa fa-user"></i></div>
+        <span>Cliente</span>
+      </div>
+      <div class="line"></div>
+      <div class="step completed" id="etapa3">
+        <div class="circle"><i class="fa fa-file"></i></div>
+        <span>Resumo</span>
+      </div>
+      <div class="line"></div>
+      <div class="step active" id="etapa4">
+        <div class="circle"><i class="fa fa-check"></i></div>
+        <span>Conclusão</span>
+      </div>
+    </div>
+
+    <div class="success-icon"><i class="fa fa-circle-check"></i></div>
+    <h1>Proposta cadastrada com sucesso!</h1>
+    <p>Você será redirecionado automaticamente para a esteira em alguns segundos...</p>
+
+    <button class="btn-esteira" onclick="irParaEsteira()">
+      <i class="fa fa-table-list"></i> Ir para Esteira Agora
+    </button>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        window.location.href = "/esteira";
+      }, 5000);
+    });
+
+    function irParaEsteira() {
+      window.location.href = "/esteira";
+    }
+  </script>
+</body>
+</html>

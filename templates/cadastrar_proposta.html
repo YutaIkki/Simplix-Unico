@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastrar Proposta</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(40deg, var(--gradiente-inicio), var(--gradiente-fim));
+      font-family: 'Tomorrow', sans-serif;
+      color: #fff;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 60px auto;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 35px 50px;
+      border-radius: 22px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stepper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      margin: 40px auto 50px;
+      position: relative;
+      max-width: 900px;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+      transition: all 0.3s ease;
+    }
+
+    .circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .step.active .circle {
+      background: linear-gradient(135deg, #00e1ff, #00ffa3);
+      color: #000;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+      border: none;
+      transform: scale(1.1);
+    }
+
+    .step.completed .circle {
+      background: linear-gradient(135deg, #00ff7f, #b3ff00);
+      color: #000;
+      border: none;
+    }
+
+    .step span {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #fff;
+      font-weight: bold;
+      text-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+    }
+
+    .line {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 25px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    th {
+      text-align: left;
+      color: #00e1ff;
+    }
+
+    .actions {
+      margin-top: 35px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 25px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn-voltar {
+      background-color: #777;
+      color: white;
+    }
+
+    .btn-avancar {
+      background: linear-gradient(90deg, #00b09b, #96c93d);
+      color: white;
+    }
+
+    .btn-voltar:hover {
+      background-color: #555;
+    }
+
+    .btn-avancar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(0, 255, 100, 0.7);
+    }
+
+    .no-sim {
+      margin-top: 40px;
+      font-size: 18px;
+      color: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>CADASTRAR PROPOSTA</h1>
+
+    <div class="stepper" data-step="1">
+      <div class="step" id="etapa1">
+        <div class="circle"><i class="fa fa-list"></i></div>
+        <span>Simulação</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa2">
+        <div class="circle"><i class="fa fa-user"></i></div>
+        <span>Cliente</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa3">
+        <div class="circle"><i class="fa fa-file"></i></div>
+        <span>Resumo</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa4">
+        <div class="circle"><i class="fa fa-check"></i></div>
+        <span>Conclusão</span>
+      </div>
+    </div>
+
+    <h2>CPF: {{ cpf }}</h2>
+    <h3>Tabela Selecionada: {{ tabela }}</h3>
+
+    {% if simulacoes %}
+    <h3>Ofertas Disponíveis</h3>
+    <table>
+      <tr>
+        <th>Tabela</th>
+        <th>Valor Liberado</th>
+        <th>Taxa (%)</th>
+        <th>Parcelas</th>
+        <th>Selecionar</th>
+      </tr>
+      {% for sim in simulacoes %}
+      <tr>
+        <td>{{ sim.tabelaTitulo }}</td>
+        <td>R$ {{ "%.2f"|format(sim.valorLiquido|default(0)) | replace(".", ",") }}</td>
+        <td>{{ "%.2f"|format(sim.detalhes.taxa|default(0)) | replace(".", ",") }}%</td>
+        <td>{{ sim.detalhes.parcelas|length }}</td>
+        <td>
+          <input type="radio" name="tabelaEscolhida"
+            data-valor="{{ sim.valorLiquido }}"
+            data-taxa="{{ sim.detalhes.taxa }}"
+            data-qtdparcelas="{{ sim.detalhes.parcelas|length }}"
+            data-tabela="{{ sim.tabelaTitulo }}"
+            data-simulationid="{{ sim.simulationId }}">
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="no-sim">Nenhuma simulação encontrada para este CPF.</div>
+    {% endif %}
+
+    <div class="actions">
+      <button class="btn-voltar" onclick="history.back()"><i class="fa fa-arrow-left"></i> Voltar</button>
+      <button class="btn-avancar"><i class="fa fa-arrow-right"></i> Avançar</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const stepper = document.querySelector(".stepper");
+      const currentStep = parseInt(stepper.dataset.step);
+      const steps = document.querySelectorAll(".step");
+      const lines = document.querySelectorAll(".line");
+
+      steps.forEach((step, index) => {
+        if (index + 1 < currentStep) step.classList.add("completed");
+        if (index + 1 === currentStep) step.classList.add("active");
+      });
+
+      lines.forEach((line, index) => {
+        if (index + 1 < currentStep) {
+          line.style.background = "linear-gradient(90deg, #00e1ff, #00ff7f)";
+        }
+      });
+    });
+
+    document.querySelector(".btn-avancar").addEventListener("click", () => {
+      const selecionada = document.querySelector("input[name='tabelaEscolhida']:checked");
+      if (!selecionada) {
+        alert("⚠️ Escolha uma tabela antes de avançar!");
+        return;
+      }
+
+      const cpf = "{{ cpf }}";
+      const tabela = selecionada.dataset.tabela;
+      const valor = selecionada.dataset.valor;
+      const taxa = selecionada.dataset.taxa;
+      const qtdParcelas = selecionada.dataset.qtdparcelas;
+      const simulationId = selecionada.dataset.simulationid;
+
+      const params = new URLSearchParams({ cpf, tabela, valor, taxa, qtdParcelas, simulationId });
+      window.location.href = `/cadastrar_proposta_cliente?${params.toString()}`;
+    });
+  </script>
+</body>
+</html>

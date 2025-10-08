@@ -4,78 +4,198 @@
   <meta charset="UTF-8">
   <title>Esteira de Propostas</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
+    body {
+      background: linear-gradient(40deg, var(--gradiente-inicio), var(--gradiente-fim));
+      font-family: 'Tomorrow', sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    .esteira-container {
+      max-width: 1100px;
+      margin: 60px auto;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 40px 50px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      margin-bottom: 25px;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+
+    .buscar-cpf {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .buscar-cpf input {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      width: 220px;
+      outline: none;
+    }
+
+    .buscar-cpf button {
+      padding: 8px 15px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(90deg, #00e1ff, #00ff88);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .buscar-cpf button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(45, 68, 58, 0.7);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.1);
+      color: #00e1ff;
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transition: 0.3s;
+    }
+
+    .btn-editar, .btn-excluir {
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: bold;
+      text-decoration: none;
+      margin: 2px;
+      display: inline-block;
+      font-size: 13px;
+      transition: 0.3s;
+    }
+
+    .btn-editar {
+      background: #0099ff;
+    }
+
+    .btn-editar:hover {
+      background: #0077cc;
+    }
+
+    .btn-excluir {
+      background: #ff4d4d;
+    }
+
+    .btn-excluir:hover {
+      background: #d93636;
+    }
+
+    .status {
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+    .status-enviada { background: rgba(255, 166, 0, 0.3); color: #ffb347; }
+    .status-analise { background: rgba(0, 150, 255, 0.3); color: #00bfff; }
+    .status-aprovada { background: rgba(0, 255, 100, 0.3); color: #00ff99; }
+    .status-reprovada { background: rgba(255, 0, 80, 0.3); color: #ff6077; }
+
     .paginacao {
       margin-top: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 14px;
-      color: var(--cor-texto);
+      color: white;
     }
+
     .paginacao .links a {
       margin: 0 5px;
       padding: 6px 12px;
       border-radius: 6px;
       text-decoration: none;
       background: rgba(255, 255, 255, 0.15);
-      color: var(--cor-texto);
+      color: white;
       transition: 0.3s;
     }
+
     .paginacao .links a:hover {
       background: rgba(255, 255, 255, 0.3);
     }
-    .buscar-cpf {
-      margin-bottom: 15px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .buscar-cpf input {
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      width: 200px;
-    }
-    .buscar-cpf button {
-      padding: 6px 12px;
-      border-radius: 6px;
+
+    .btn-voltar {
+      margin-top: 25px;
+      padding: 10px 25px;
       border: none;
-      background: #4cafef;
-      color: white;
+      border-radius: 8px;
       font-weight: bold;
+      background: linear-gradient(90deg, #5c5c5c, #141414);
+      color: #fff;
       cursor: pointer;
       transition: 0.3s;
     }
-    .buscar-cpf button:hover {
-      background: #1565c0;
+
+    .btn-voltar:hover {
+      transform: scale(1.05);
+      background-color: #2c2c2c;
     }
   </style>
 </head>
-<body class="pagina">
+<body>
   <div class="esteira-container">
     <h1>Esteira de Propostas</h1>
 
     <form method="get" action="{{ url_for('esteira') }}" class="buscar-cpf">
       <label for="cpf">Buscar CPF:</label>
       <input type="text" id="cpf" name="cpf" value="{{ request.args.get('cpf', '') }}" placeholder="Digite o CPF">
-      <button type="submit">Buscar</button>
+      <button type="submit"><i class="fa fa-search"></i> Buscar</button>
     </form>
 
     <table class="tabela">
       <thead>
         <tr>
+          <th>ID</th>
           <th>CPF</th>
           <th>Nome</th>
           <th>Valor</th>
           <th>Status</th>
           <th>Data</th>
           <th>Usuário</th>
+          <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        {% for cpf, nome, valor, status, data, usuario in propostas %}
+        {% for id, cpf, nome, valor, status, data, usuario in propostas %}
         <tr>
+          <td>{{ id }}</td>
           <td>{{ cpf }}</td>
           <td>{{ nome }}</td>
           <td>R$ {{ "%.2f"|format(valor|default(0)) }}</td>
@@ -91,6 +211,10 @@
           </td>
           <td>{{ data }}</td>
           <td>{{ usuario or "-" }}</td>
+          <td>
+            <a href="/editar_proposta/{{ id }}" class="btn-editar"><i class="fa fa-edit"></i> Editar</a>
+            <a href="/excluir/{{ id }}" class="btn-excluir" onclick="return confirm('Tem certeza que deseja excluir esta proposta?');"><i class="fa fa-trash"></i> Excluir</a>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -111,7 +235,7 @@
       </div>
     </div>
 
-    <a href="/index"><button class="btn-voltar">Voltar</button></a>
+    <a href="/index"><button class="btn-voltar"><i class="fa fa-arrow-left"></i> Voltar</button></a>
   </div>
 </body>
 </html>

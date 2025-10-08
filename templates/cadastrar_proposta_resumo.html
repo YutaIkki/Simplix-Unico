@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Etapa 3 - Resumo da Proposta</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(40deg, var(--gradiente-inicio), var(--gradiente-fim));
+      font-family: 'Tomorrow', sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 60px auto;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 35px 50px;
+      border-radius: 22px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stepper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      margin: 40px auto 50px;
+      position: relative;
+      max-width: 900px;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+      transition: all 0.3s ease;
+    }
+
+    .circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .step.active .circle {
+      background: linear-gradient(135deg, #00e1ff, #00ffa3);
+      color: #000;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+      border: none;
+      transform: scale(1.1);
+    }
+
+    .step.completed .circle {
+      background: linear-gradient(135deg, #00ff7f, #b3ff00);
+      color: #000;
+      border: none;
+    }
+
+    .step span {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #fff;
+      font-weight: bold;
+      text-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+    }
+
+    .line {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .line::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #00e1ff, #00ff7f);
+      transition: width 0.5s ease-in-out;
+    }
+
+    .dados {
+      text-align: left;
+      margin-top: 30px;
+      padding: 25px 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .dados h3 {
+      color: #00e1ff;
+      margin-bottom: 10px;
+      text-shadow: 0 0 6px rgba(255,255,255,0.3);
+    }
+
+    .dados p {
+      margin: 6px 0;
+      font-size: 15px;
+    }
+
+    .btns {
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    button {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'Tomorrow', sans-serif;
+      transition: 0.3s;
+    }
+
+    .voltar {
+      background: #777;
+      color: #fff;
+    }
+
+    .voltar:hover {
+      background-color: #555;
+    }
+
+    .enviar {
+      background: linear-gradient(90deg, #00b09b, #96c93d);
+      color: white;
+    }
+
+    .enviar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(0, 255, 100, 0.7);
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Etapa 3 - Resumo da Proposta</h1>
+
+    <div class="stepper" data-step="3">
+      <div class="step" id="etapa1">
+        <div class="circle"><i class="fa fa-list"></i></div>
+        <span>Simulação</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa2">
+        <div class="circle"><i class="fa fa-user"></i></div>
+        <span>Cliente</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa3">
+        <div class="circle"><i class="fa fa-file"></i></div>
+        <span>Resumo</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa4">
+        <div class="circle"><i class="fa fa-check"></i></div>
+        <span>Conclusão</span>
+      </div>
+    </div>
+
+    <div class="dados" id="bloco-simulacao">
+      <h3>📊 Dados da Simulação</h3>
+      <p><strong>CPF:</strong> <span id="cpf"></span></p>
+      <p><strong>Tabela:</strong> <span id="tabela"></span></p>
+      <p><strong>Valor Liberado:</strong> R$ <span id="valor"></span></p>
+      <p><strong>Taxa:</strong> <span id="taxa"></span>%</p>
+      <p><strong>Parcelas:</strong> <span id="parcelas"></span></p>
+    </div>
+
+    <div class="dados" id="bloco-cliente">
+      <h3>👤 Dados do Cliente</h3>
+      <p><strong>Nome:</strong> <span id="nome"></span></p>
+      <p><strong>Telefone:</strong> <span id="telefone"></span></p>
+      <p><strong>E-mail:</strong> <span id="email"></span></p>
+      <p><strong>Endereço:</strong> <span id="rua"></span>, <span id="numero"></span> - <span id="bairro"></span>, <span id="cidade"></span> / <span id="estado"></span></p>
+      <p><strong>CEP:</strong> <span id="cep"></span></p>
+      <p><strong>Banco:</strong> <span id="banco"></span></p>
+      <p><strong>Agência:</strong> <span id="agencia"></span></p>
+      <p><strong>Conta:</strong> <span id="conta"></span> (<span id="tipoConta"></span>)</p>
+    </div>
+
+    <form id="formResumo" method="POST" action="/enviar_proposta">
+      <input type="hidden" name="cpf" id="cpfHidden">
+      <input type="hidden" name="nome" id="nomeHidden">
+      <input type="hidden" name="valor" id="valorHidden">
+      <input type="hidden" name="tabela" id="tabelaHidden">
+    </form>
+
+    <div class="btns">
+      <button class="voltar" onclick="history.back()"><i class="fa fa-arrow-left"></i> Voltar</button>
+      <button class="enviar" id="btn-enviar">Enviar Proposta <i class="fa fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const campos = [
+        "cpf", "tabela", "valor", "taxa", "parcelas",
+        "nome", "telefone", "email", "cep", "rua", "numero",
+        "bairro", "cidade", "estado", "banco", "agencia",
+        "conta", "tipoConta"
+      ];
+
+      campos.forEach(campo => {
+        const el = document.getElementById(campo);
+        if (el) el.textContent = params.get(campo) || "-";
+      });
+
+      document.getElementById("cpfHidden").value = params.get("cpf") || "";
+      document.getElementById("nomeHidden").value = params.get("nome") || "";
+      document.getElementById("valorHidden").value = params.get("valor") || "";
+      document.getElementById("tabelaHidden").value = params.get("tabela") || "";
+    });
+
+    document.getElementById("btn-enviar").addEventListener("click", () => {
+      document.getElementById("formResumo").submit();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Etapa 2 - Cliente</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(40deg, var(--gradiente-inicio), var(--gradiente-fim));
+      font-family: 'Tomorrow', sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: 60px auto;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 30px 45px;
+      border-radius: 22px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stepper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      margin: 40px auto 50px;
+      position: relative;
+      max-width: 900px;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+      transition: all 0.3s ease;
+    }
+
+    .circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .step.active .circle {
+      background: linear-gradient(135deg, #00e1ff, #00ffa3);
+      color: #000;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+      border: none;
+      transform: scale(1.1);
+    }
+
+    .step.completed .circle {
+      background: linear-gradient(135deg, #00ff7f, #b3ff00);
+      color: #000;
+      border: none;
+    }
+
+    .step span {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      text-shadow: 0 0 6px rgba(255,255,255,0.25);
+    }
+
+    .line {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 2px;
+    }
+
+    input, select {
+      width: 90%;
+      padding: 10px;
+      margin: 8px;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+      font-family: 'Tomorrow', sans-serif;
+    }
+
+    .btns {
+      margin-top: 25px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    button {
+      padding: 10px 25px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'Tomorrow', sans-serif;
+      transition: 0.3s;
+    }
+
+    .voltar { background: #777; color: #fff; }
+    .voltar:hover { background-color: #555; }
+
+    .avancar {
+      background: linear-gradient(90deg, #00b09b, #96c93d);
+      color: white;
+    }
+
+    .avancar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(0, 255, 100, 0.7);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Etapa 2 - Dados do Cliente</h1>
+
+    <div class="stepper" data-step="2">
+      <div class="step" id="etapa1">
+        <div class="circle"><i class="fa fa-list"></i></div>
+        <span>Simulação</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa2">
+        <div class="circle"><i class="fa fa-user"></i></div>
+        <span>Cliente</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa3">
+        <div class="circle"><i class="fa fa-file"></i></div>
+        <span>Resumo</span>
+      </div>
+      <div class="line"></div>
+      <div class="step" id="etapa4">
+        <div class="circle"><i class="fa fa-check"></i></div>
+        <span>Conclusão</span>
+      </div>
+    </div>
+
+    <div id="dadosSimulacao">
+      <p><strong>CPF:</strong> <span id="cpf-info"></span></p>
+      <p><strong>Tabela:</strong> <span id="tabela-info"></span></p>
+      <p><strong>Valor Liberado:</strong> R$ <span id="valor-info"></span></p>
+      <p><strong>Taxa:</strong> <span id="taxa-info"></span>%</p>
+      <p><strong>Parcelas:</strong> <span id="parcelas-info"></span></p>
+    </div>
+
+    <form id="formCliente">
+      <input type="text" id="nome" placeholder="Nome completo" required><br>
+      <input type="text" id="telefone" placeholder="Telefone" required><br>
+      <input type="email" id="email" placeholder="E-mail" required><br>
+      <input type="text" id="cep" placeholder="CEP" required><br>
+      <input type="text" id="rua" placeholder="Rua" required><br>
+      <input type="text" id="numero" placeholder="Número" required><br>
+      <input type="text" id="bairro" placeholder="Bairro" required><br>
+      <input type="text" id="cidade" placeholder="Cidade" required><br>
+      <input type="text" id="estado" placeholder="Estado" required><br>
+      <input type="text" id="banco" placeholder="Banco" required><br>
+      <input type="text" id="agencia" placeholder="Agência" required><br>
+      <input type="text" id="conta" placeholder="Conta" required><br>
+
+      <select id="tipoConta" required>
+        <option value="">Tipo de Conta</option>
+        <option value="ContaCorrente">Conta Corrente</option>
+        <option value="ContaPoupanca">Conta Poupança</option>
+        <option value="ContaSalario">Conta Salário</option>
+      </select><br>
+    </form>
+
+    <div class="btns">
+      <button class="voltar" onclick="history.back()"><i class="fa fa-arrow-left"></i> Voltar</button>
+      <button class="avancar" id="btn-avancar">Avançar <i class="fa fa-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const stepper = document.querySelector(".stepper");
+      const currentStep = parseInt(stepper.dataset.step);
+      document.querySelectorAll(".step").forEach((step, i) => {
+        if (i + 1 < currentStep) step.classList.add("completed");
+        if (i + 1 === currentStep) step.classList.add("active");
+      });
+      document.querySelectorAll(".line").forEach((line, i) => {
+        if (i + 1 < currentStep)
+          line.style.background = "linear-gradient(90deg, #00e1ff, #00ff7f)";
+      });
+
+      const params = new URLSearchParams(window.location.search);
+      document.getElementById("cpf-info").textContent = params.get("cpf");
+      document.getElementById("tabela-info").textContent = params.get("tabela");
+      document.getElementById("valor-info").textContent = parseFloat(params.get("valor") || 0).toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
+      document.getElementById("taxa-info").textContent = parseFloat(params.get("taxa") || 0).toFixed(2).replace(".", ",");
+      document.getElementById("parcelas-info").textContent = params.get("qtdParcelas");
+
+      document.getElementById("cep").addEventListener("blur", async () => {
+        const cep = document.getElementById("cep").value.replace(/\D/g, "");
+        if (cep.length !== 8) return;
+        try {
+          const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+          const dados = await resp.json();
+          if (dados.erro) return alert("CEP não encontrado!");
+          document.getElementById("rua").value = dados.logradouro || "";
+          document.getElementById("bairro").value = dados.bairro || "";
+          document.getElementById("cidade").value = dados.localidade || "";
+          document.getElementById("estado").value = dados.uf || "";
+        } catch (e) {
+          console.error("Erro ao buscar CEP:", e);
+        }
+      });
+
+      document.getElementById("btn-avancar").addEventListener("click", () => {
+        const cep = document.getElementById("cep").value;
+        if (!cep) return alert("Preencha o CEP!");
+        alert("💾 Dados do cliente salvos! Avançando para o resumo...");
+        const nome = document.getElementById("nome").value;
+        const telefone = document.getElementById("telefone").value;
+        const email = document.getElementById("email").value;
+        const rua = document.getElementById("rua").value;
+        const numero = document.getElementById("numero").value;
+        const bairro = document.getElementById("bairro").value;
+        const cidade = document.getElementById("cidade").value;
+        const estado = document.getElementById("estado").value;
+        const banco = document.getElementById("banco").value;
+        const agencia = document.getElementById("agencia").value;
+        const conta = document.getElementById("conta").value;
+        const tipoConta = document.getElementById("tipoConta").value;
+        const cpf = params.get("cpf");
+        const tabela = params.get("tabela");
+        const valor = params.get("valor");
+        const taxa = params.get("taxa");
+        const qtdParcelas = params.get("qtdParcelas");
+        const simulationId = params.get("simulationId");
+
+        const url = `/cadastrar_proposta_resumo?cpf=${encodeURIComponent(cpf)}&tabela=${encodeURIComponent(tabela)}&valor=${encodeURIComponent(valor)}&taxa=${encodeURIComponent(taxa)}&parcelas=${encodeURIComponent(qtdParcelas)}&simulationId=${encodeURIComponent(simulationId)}&nome=${encodeURIComponent(nome)}&telefone=${encodeURIComponent(telefone)}&email=${encodeURIComponent(email)}&cep=${encodeURIComponent(cep)}&rua=${encodeURIComponent(rua)}&numero=${encodeURIComponent(numero)}&bairro=${encodeURIComponent(bairro)}&cidade=${encodeURIComponent(cidade)}&estado=${encodeURIComponent(estado)}&banco=${encodeURIComponent(banco)}&agencia=${encodeURIComponent(agencia)}&conta=${encodeURIComponent(conta)}&tipoConta=${encodeURIComponent(tipoConta)}`;
+        window.location.href = url;
+      });
+    });
+  </script>
+</body>
+</html>

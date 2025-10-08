@@ -3,6 +3,7 @@ import requests
 import time
 import json
 import sqlite3
+from datetime import datetime
 import os, re
 from werkzeug.security import generate_password_hash, check_password_hash
 try:
@@ -15,6 +16,7 @@ app.secret_key = "chave_secreta"
 
 API_LOGIN = "https://simplix-integration.partner1.com.br/api/Login"
 API_SIMULATE = "https://simplix-integration.partner1.com.br/api/Proposal/Simulate"
+API_CREATE = "https://simplix-integration.partner1.com.br/api/Proposal/Create"
 
 TOKEN = ""
 TOKEN_EXPIRA = 0
@@ -30,7 +32,6 @@ def get_conn():
 def init_db():
     conn = get_conn()
     c = conn.cursor()
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,11 +52,6 @@ def init_db():
         )
     """)
 
-    if isinstance(conn, sqlite3.Connection):
-        c.execute("UPDATE users SET background = ? WHERE background = ?", ("#133abb,#00e1ff", "blue"))
-    else:
-        c.execute("UPDATE users SET background = %s WHERE background = %s", ("#133abb,#00e1ff", "blue"))
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS propostas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +64,20 @@ def init_db():
             data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             data_status TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             data_pagamento TEXT,
-            usuario TEXT
+            usuario TEXT,
+            telefone TEXT,
+            email TEXT,
+            cep TEXT,
+            logradouro TEXT,
+            numero TEXT,
+            bairro TEXT,
+            cidade TEXT,
+            estado TEXT,
+            banco TEXT,
+            agencia TEXT,
+            conta TEXT,
+            tabela TEXT,
+            data_nascimento TEXT
         )
     """ if isinstance(conn, sqlite3.Connection) else """
         CREATE TABLE IF NOT EXISTS propostas (
@@ -82,38 +91,49 @@ def init_db():
             data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             data_status TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             data_pagamento TEXT,
-            usuario TEXT
+            usuario TEXT,
+            telefone TEXT,
+            email TEXT,
+            cep TEXT,
+            logradouro TEXT,
+            numero TEXT,
+            bairro TEXT,
+            cidade TEXT,
+            estado TEXT,
+            banco TEXT,
+            agencia TEXT,
+            conta TEXT,
+            tabela TEXT,
+            data_nascimento TEXT
         )
     """)
 
-    if isinstance(conn, sqlite3.Connection):
-        try: c.execute("ALTER TABLE propostas ADD COLUMN valor_contrato REAL")
-        except: pass
-        try: c.execute("ALTER TABLE propostas ADD COLUMN valor_liquido REAL")
-        except: pass
-        try: c.execute("ALTER TABLE propostas ADD COLUMN data_status TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-        except: pass
-        try: c.execute("ALTER TABLE propostas ADD COLUMN data_pagamento TEXT")
-        except: pass
-        try: c.execute("ALTER TABLE propostas ADD COLUMN usuario TEXT")
-        except: pass
-    else:
-        try: c.execute("ALTER TABLE propostas ADD COLUMN valor_contrato REAL")
-        except: pass
-        try: c.execute("ALTER TABLE propostas ADD COLUMN valor_liquido REAL")
-        except: pass
-        try: c.execute("ALTER TABLE propostas ADD COLUMN data_status TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-        except: pass
-        try: c.execute("ALTER TABLE propostas ADD COLUMN data_pagamento TEXT")
-        except: pass
-        try: c.execute("ALTER TABLE propostas ADD COLUMN usuario TEXT")
-        except: pass
+    novos_campos = [
+        ("telefone", "TEXT"),
+        ("email", "TEXT"),
+        ("cep", "TEXT"),
+        ("logradouro", "TEXT"),
+        ("numero", "TEXT"),
+        ("bairro", "TEXT"),
+        ("cidade", "TEXT"),
+        ("estado", "TEXT"),
+        ("banco", "TEXT"),
+        ("agencia", "TEXT"),
+        ("conta", "TEXT"),
+        ("tabela", "TEXT"),
+        ("data_nascimento", "TEXT"),
+    ]
+
+    for campo, tipo in novos_campos:
+        try:
+            c.execute(f"ALTER TABLE propostas ADD COLUMN {campo} {tipo}")
+        except Exception:
+            pass
 
     if isinstance(conn, sqlite3.Connection):
         c.execute("SELECT * FROM users WHERE role = ?", ("admin",))
     else:
         c.execute("SELECT * FROM users WHERE role = %s", ("admin",))
-
     if not c.fetchone():
         admin_user = "Leonardo"
         admin_pass = hash_senha("123456")
@@ -386,9 +406,22 @@ def consultar_cpf(cpf, tabela=None):
                         "final": True
                     }
 
+            if simulacoes:
+                sim = simulacoes[0]
+                detalhes = sim.get("detalhes", {}) or {}
+                return {
+                    "cpf": cpf,
+                    "tabela": sim.get("tabelaCodigo") or sim.get("tabelaTitulo"),
+                    "saldoBruto": detalhes.get("saldoTotalBloqueado", 0),
+                    "valorLiberado": sim.get("valorLiquido", 0),
+                    "situacao": "Consulta OK",
+                    "informacao": "Tabela diferente encontrada automaticamente.",
+                    "final": True
+                }
+
             desc = (data.get("objectReturn", {}) or {}).get("description", "") \
-                    or (data.get("objectReturn", {}) or {}).get("observacao", "") \
-                    or f"Tabela {tabela} não encontrada nas simulações"
+                or (data.get("objectReturn", {}) or {}).get("observacao", "") \
+                or f"Tabela {tabela} não encontrada nas simulações"
 
             return {
                 "cpf": cpf,
@@ -421,8 +454,8 @@ def consultar_cpf(cpf, tabela=None):
             }
 
         desc = (data.get("objectReturn", {}) or {}).get("description", "") \
-                or (data.get("objectReturn", {}) or {}).get("observacao", "") \
-                or "Cliente não autorizou a instituição financeira a realizar a consulta."
+            or (data.get("objectReturn", {}) or {}).get("observacao", "") \
+            or "Cliente não autorizou a instituição financeira a realizar a consulta."
 
         return {
             "cpf": cpf,
@@ -465,8 +498,6 @@ def ensure_db():
             print(f"⚠️ Erro ao inicializar banco: {e}")
         app._db_initialized = True 
 
-API_CREATE = "https://simplix-integration.partner1.com.br/api/Proposal/Create"
-
 def normalizar_cpf(cpf):
     cpf = re.sub(r'\D', '', cpf)
     return cpf.zfill(11)     
@@ -491,103 +522,196 @@ def normalizar_valor(valor):
     except:
         return 0.0
 
-@app.route("/cadastrar-proposta", methods=["GET", "POST"])
+@app.route("/cadastrar_proposta")
 def cadastrar_proposta():
+    cpf = request.args.get("cpf")
+
+    if not cpf:
+        return "CPF não informado", 400
+
+    cpf = re.sub(r'\D', '', cpf).zfill(11)
+
+    payload = {
+        "cpf": cpf,
+        "parcelas": 0,
+        "convenio": 1,
+        "produto": 1
+    }
+
+    headers = {
+        "Authorization": f"Bearer {obter_token()}",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    simulacoes = []
+    try:
+        print(f"[{cpf}] 🔍 Consultando API Simplix para listar todas as tabelas...")
+        resp = requests.post(API_SIMULATE, json=payload, headers=headers, timeout=60)
+        print(f"[{cpf}] 📡 Status Code: {resp.status_code}")
+
+        try:
+            data = resp.json()
+            print(f"[{cpf}] RAW JSON:\n{json.dumps(data, indent=2, ensure_ascii=False)}")
+        except Exception:
+            data = {}
+            print(f"[{cpf}] ❌ Erro ao decodificar JSON. Retorno bruto:\n{resp.text}")
+
+        simulacoes = (data.get("objectReturn", {}) or {}).get("retornoSimulacao", [])
+
+        if not simulacoes:
+            print(f"[{cpf}] ⚠️ Nenhuma simulação encontrada no retorno da Simplix.")
+
+    except requests.exceptions.Timeout:
+        print(f"[{cpf}] ⏱️ Timeout ao consultar API Simplix.")
+    except Exception as e:
+        print(f"[{cpf}] ❌ Erro inesperado ao consultar Simplix: {e}")
+
+    return render_template(
+        "cadastrar_proposta.html",
+        cpf=cpf,
+        simulacoes=simulacoes
+    )
+
+@app.route("/cadastrar_proposta_cliente")
+def cadastrar_proposta_cliente():
+    cpf = request.args.get("cpf")
+    tabela = request.args.get("tabela")
+    valor = request.args.get("valor")
+    simulation_id = request.args.get("simulation_id")
+
+    return render_template(
+        "cadastrar_proposta_cliente.html",
+        cpf=cpf,
+        tabela=tabela,
+        valor=valor,
+        simulation_id=simulation_id
+    )
+
+@app.route("/enviar-proposta", methods=["POST"])
+def enviar_proposta():
+    data = request.get_json()
+    cliente = data.get("cliente", {})
+    cpf = data.get("cpf")
+    tabela = data.get("tabela")
+
+    payload = {
+        "cliente": {
+            "nome": cliente.get("nome"),
+            "email": cliente.get("email"),
+            "telefone": cliente.get("telefone"),
+            "cpf": cpf,
+            "dataDeNascimento": cliente.get("dataNascimento"),
+            "endereco": {
+                "cep": cliente.get("cep"),
+                "logradouro": cliente.get("logradouro"),
+                "numero": cliente.get("numero"),
+                "bairro": cliente.get("bairro"),
+                "cidade": cliente.get("cidade"),
+                "estado": cliente.get("estado")
+            },
+            "contaBancaria": {
+                "codigoDoBanco": cliente.get("banco"),
+                "agencia": cliente.get("agencia"),
+                "conta": cliente.get("conta"),
+                "tipoDeConta": "ContaCorrente"
+            }
+        },
+        "operacao": {
+            "simulationId": data.get("simulationId") or cliente.get("simulationId"),
+            "periodos": [
+                {"dataRepasse": time.strftime("%Y-%m-%dT%H:%M:%S"), "valor": float(cliente.get("valor", 0))}
+            ]
+        },
+        "callback": {"url": "https://simplix-unico.onrender.com/simplix/callback", "method": "POST"},
+        "loginDigitador": session.get("user", "sistema")
+    }
+
+    try:
+        headers = {
+            "Authorization": f"Bearer {obter_token()}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        resp = requests.post(
+            API_CREATE,
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+        print(f"[Simplix Produção] Resposta: {resp.status_code} | {resp.text}")
+        return jsonify({"ok": True, "status": resp.status_code, "resposta": resp.json()})
+    except Exception as e:
+        return jsonify({"ok": False, "erro": str(e)})
+
+@app.route("/editar_proposta/<int:proposta_id>", methods=["GET", "POST"])
+def editar_proposta(proposta_id):
     if "user" not in session:
         return redirect(url_for("login"))
 
+    conn = get_conn()
+    c = conn.cursor()
+
     if request.method == "POST":
-        nome = request.form.get("nome", "").strip()
-        email = request.form.get("email", "").strip()
-        cpf = normalizar_cpf(request.form.get("cpf", ""))
-        telefone = normalizar_telefone(request.form.get("telefone", ""))
-        data_nasc = normalizar_data(request.form.get("dataNascimento", ""))
-        cep = request.form.get("cep", "").strip()
-        logradouro = request.form.get("logradouro", "").strip()
-        numero = request.form.get("numero", "").strip()
-        bairro = request.form.get("bairro", "").strip()
-        cidade = request.form.get("cidade", "").strip()
-        estado = request.form.get("estado", "").strip()
-        valor = normalizar_valor(request.form.get("valor", ""))
+        campos = [
+            "nome", "telefone", "email", "cep", "logradouro", "numero", "bairro",
+            "cidade", "estado", "banco", "agencia", "conta", "valor", "tabela", "data_nascimento"
+        ]
+        dados = [request.form.get(campo) for campo in campos]
 
-        if not nome or not cpf or not data_nasc or valor <= 0:
-            return render_template("cadastrar.html",
-                                   resposta={"msg": "⚠️ Preencha todos os campos obrigatórios: Nome, CPF, Data de Nascimento e Valor."})
-
-        usuario_logado = session["user"]
-        agora = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        conn = get_conn()
-        c = conn.cursor()
         if isinstance(conn, sqlite3.Connection):
-            c.execute("""
-                INSERT INTO propostas 
-                (cpf, nome, valor, valor_contrato, valor_liquido, status, data_status, usuario) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (cpf, nome, valor, valor, valor, "Enviada", agora, usuario_logado))
+            c.execute(f"""
+                UPDATE propostas SET
+                    nome=?, telefone=?, email=?, cep=?, logradouro=?, numero=?, bairro=?, cidade=?, estado=?,
+                    banco=?, agencia=?, conta=?, valor=?, tabela=?, data_nascimento=?
+                WHERE id=?
+            """, (*dados, proposta_id))
         else:
-            c.execute("""
-                INSERT INTO propostas 
-                (cpf, nome, valor, valor_contrato, valor_liquido, status, data_status, usuario) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (cpf, nome, valor, valor, valor, "Enviada", agora, usuario_logado))
+            c.execute(f"""
+                UPDATE propostas SET
+                    nome=%s, telefone=%s, email=%s, cep=%s, logradouro=%s, numero=%s, bairro=%s, cidade=%s, estado=%s,
+                    banco=%s, agencia=%s, conta=%s, valor=%s, tabela=%s, data_nascimento=%s
+                WHERE id=%s
+            """, (*dados, proposta_id))
+
         conn.commit()
         conn.close()
+        return redirect(url_for("esteira"))
 
-        payload = {
-            "cliente": {
-                "nome": nome,
-                "email": email,
-                "cpf": cpf,
-                "telefone": telefone,
-                "dataDeNascimento": data_nasc,
-                "endereco": {
-                    "cep": cep,
-                    "logradouro": logradouro,
-                    "numero": numero,
-                    "bairro": bairro,
-                    "cidade": cidade,
-                    "estado": estado
-                }
-            },
-            "operacao": {
-                "simulationId": "123e4567-e89b-12d3-a456-426614174000",
-                "periodos": [
-                    {
-                        "dataRepasse": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                        "valor": valor
-                    }
-                ]
-            },
-            "callback": {
-                "url": "https://simplix-unico.onrender.com/simplix/callback",
-                "method": "POST"
-            },
-            "loginDigitador": usuario_logado
-        }
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("SELECT * FROM propostas WHERE id = ?", (proposta_id,))
+    else:
+        c.execute("SELECT * FROM propostas WHERE id = %s", (proposta_id,))
+    row = c.fetchone()
+    conn.close()
 
-        try:
-            headers = {
-                "Authorization": f"Bearer {obter_token()}",
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-            resp = requests.post(API_CREATE, json=payload, headers=headers, timeout=30)
+    if not row:
+        return "Proposta não encontrada", 404
 
-            if resp.status_code == 200:
-                print(f"[Simplix] Proposta enviada com sucesso: {resp.json()}")
-                msg = "✅ Proposta cadastrada e enviada para Simplix!"
-            else:
-                print(f"[Simplix] Erro {resp.status_code}: {resp.text}")
-                msg = f"⚠️ Proposta salva, mas falhou no envio para Simplix ({resp.status_code})"
+    colunas = [
+        "id", "cpf", "nome", "valor", "valor_contrato", "valor_liquido", "status",
+        "data_criacao", "data_status", "data_pagamento", "usuario",
+        "telefone", "email", "cep", "logradouro", "numero", "bairro",
+        "cidade", "estado", "banco", "agencia", "conta", "tabela", "data_nascimento"
+    ]
+    proposta = dict(zip(colunas, row))
+    return render_template("editar_proposta.html", proposta=proposta)
 
-        except Exception as e:
-            print(f"[Simplix] Erro inesperado: {e}")
-            msg = "⚠️ Proposta salva, mas falhou no envio para Simplix"
+@app.route("/excluir/<int:proposta_id>")
+def excluir_proposta(proposta_id):
+    if "user" not in session:
+        return redirect(url_for("login"))
 
-        return render_template("cadastrar.html", resposta={"msg": msg})
+    conn = get_conn()
+    c = conn.cursor()
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("DELETE FROM propostas WHERE id = ?", (proposta_id,))
+    else:
+        c.execute("DELETE FROM propostas WHERE id = %s", (proposta_id,))
+    conn.commit()
+    conn.close()
 
-    return render_template("cadastrar.html")
+    return redirect(url_for("esteira"))
 
 @app.route("/simplix/callback", methods=["POST"])
 def simplix_callback():
@@ -605,14 +729,14 @@ def simplix_callback():
 
     if isinstance(conn, sqlite3.Connection):
         c.execute("""
-            UPDATE propostas 
-            SET status = ?, valor_contrato = ?, valor_liquido = ?, data_status = ? 
+            UPDATE propostas
+            SET status = ?, valor_contrato = ?, valor_liquido = ?, data_status = ?
             WHERE cpf = ?
         """, (status, valor_contrato, valor_liquido, data_status, cpf))
     else:
         c.execute("""
-            UPDATE propostas 
-            SET status = %s, valor_contrato = %s, valor_liquido = %s, data_status = %s 
+            UPDATE propostas
+            SET status = %s, valor_contrato = %s, valor_liquido = %s, data_status = %s
             WHERE cpf = %s
         """, (status, valor_contrato, valor_liquido, data_status, cpf))
 
@@ -650,36 +774,96 @@ def esteira():
     total = c.fetchone()[0]
     total_pages = max(1, -(-total // per_page))
     offset = (page - 1) * per_page
+
     if isinstance(conn, sqlite3.Connection):
         if cpf_filtro:
-            c.execute("""SELECT cpf, nome, valor, status, data_criacao, usuario 
-                         FROM propostas 
-                         WHERE cpf LIKE ?
-                         ORDER BY data_criacao DESC 
-                         LIMIT ? OFFSET ?""", (f"%{cpf_filtro}%", per_page, offset))
+            c.execute("""
+                SELECT id, cpf, nome, valor, status, data_criacao, usuario
+                FROM propostas
+                WHERE cpf LIKE ?
+                ORDER BY data_criacao DESC
+                LIMIT ? OFFSET ?
+            """, (f"%{cpf_filtro}%", per_page, offset))
         else:
-            c.execute("""SELECT cpf, nome, valor, status, data_criacao, usuario 
-                         FROM propostas 
-                         ORDER BY data_criacao DESC 
-                         LIMIT ? OFFSET ?""", (per_page, offset))
+            c.execute("""
+                SELECT id, cpf, nome, valor, status, data_criacao, usuario
+                FROM propostas
+                ORDER BY data_criacao DESC
+                LIMIT ? OFFSET ?
+            """, (per_page, offset))
     else:
         if cpf_filtro:
-            c.execute("""SELECT cpf, nome, valor, status, data_criacao, usuario 
-                         FROM propostas 
-                         WHERE cpf LIKE %s
-                         ORDER BY data_criacao DESC 
-                         LIMIT %s OFFSET %s""", (f"%{cpf_filtro}%", per_page, offset))
+            c.execute("""
+                SELECT id, cpf, nome, valor, status, data_criacao, usuario
+                FROM propostas
+                WHERE cpf LIKE %s
+                ORDER BY data_criacao DESC
+                LIMIT %s OFFSET %s
+            """, (f"%{cpf_filtro}%", per_page, offset))
         else:
-            c.execute("""SELECT cpf, nome, valor, status, data_criacao, usuario 
-                         FROM propostas 
-                         ORDER BY data_criacao DESC 
-                         LIMIT %s OFFSET %s""", (per_page, offset))
+            c.execute("""
+                SELECT id, cpf, nome, valor, status, data_criacao, usuario
+                FROM propostas
+                ORDER BY data_criacao DESC
+                LIMIT %s OFFSET %s
+            """, (per_page, offset))
 
     propostas = c.fetchall()
     conn.close()
 
-    return render_template("esteira.html", propostas=propostas, page=page, total_pages=total_pages, total=total)
+    return render_template(
+        "esteira.html",
+        propostas=propostas,
+        page=page,
+        total_pages=total_pages,
+        total=total
+    )
+
+@app.route("/cadastrar_proposta_resumo")
+def cadastrar_proposta_resumo():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    return render_template("cadastrar_proposta_resumo.html")
+
+@app.route("/enviar_proposta", methods=["POST"])
+def enviar_proposta_resumo():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    cpf = request.form.get("cpf")
+    nome = request.form.get("nome")
+    valor = float(request.form.get("valor") or 0)
+    tabela = request.form.get("tabela")
+    usuario = session.get("user")
+    status = "Enviada"
+    data_criacao = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = get_conn()
+    c = conn.cursor()
+
+    if isinstance(conn, sqlite3.Connection):
+        c.execute("""
+            INSERT INTO propostas (cpf, nome, valor, status, data_criacao, usuario)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (cpf, nome, valor, status, data_criacao, usuario))
+    else:
+        c.execute("""
+            INSERT INTO propostas (cpf, nome, valor, status, data_criacao, usuario)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (cpf, nome, valor, status, data_criacao, usuario))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("cadastrar_proposta_conclusao"))
+
+@app.route("/cadastrar_proposta_conclusao")
+def cadastrar_proposta_conclusao():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    return render_template("cadastrar_proposta_conclusao.html")
 
 if __name__ == "__main__":
     app.run(debug=True, port=8600)
+
 

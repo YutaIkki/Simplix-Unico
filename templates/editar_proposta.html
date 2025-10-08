@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Proposta</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(40deg, #b4b4b4 , #02a855);
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 0;
+    }
+    .form-container {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 35px 40px;
+      width: 520px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.7s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255,255,255,0.4);
+    }
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffe3c1;
+      display: block;
+      text-align: left;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    input[readonly] {
+      background: #f3f3f3;
+      color: #666;
+      cursor: not-allowed;
+    }
+    .botoes {
+      text-align: center;
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+      transition: 0.3s;
+    }
+    .salvar {
+      background: linear-gradient(90deg, #00c853, #4caf50);
+      color: white;
+    }
+    .salvar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(0,255,100,0.5);
+    }
+    .cancelar {
+      background: #777;
+      color: white;
+    }
+    .cancelar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h1>Editar Proposta</h1>
+    <form method="POST">
+
+      <label>Nome completo</label>
+      <input type="text" name="nome" value="{{ proposta.nome or '' }}" required>
+
+      <label>CPF</label>
+      <input type="text" name="cpf" value="{{ proposta.cpf or '' }}" readonly>
+
+      <label>Telefone</label>
+      <input type="text" name="telefone" value="{{ proposta.telefone or '' }}" placeholder="(11) 99999-9999">
+
+      <label>E-mail</label>
+      <input type="email" name="email" value="{{ proposta.email or '' }}" placeholder="exemplo@email.com">
+
+      <label>Data de Nascimento</label>
+      <input type="text" name="data_nascimento" value="{{ proposta.data_nascimento or '' }}" placeholder="DD/MM/AAAA">
+
+      <label>CEP</label>
+      <input type="text" name="cep" value="{{ proposta.cep or '' }}" placeholder="00000-000">
+
+      <label>Logradouro</label>
+      <input type="text" name="logradouro" value="{{ proposta.logradouro or '' }}" placeholder="Rua / Avenida">
+
+      <label>Número</label>
+      <input type="text" name="numero" value="{{ proposta.numero or '' }}" placeholder="Número da residência">
+
+      <label>Bairro</label>
+      <input type="text" name="bairro" value="{{ proposta.bairro or '' }}" placeholder="Bairro">
+
+      <label>Cidade</label>
+      <input type="text" name="cidade" value="{{ proposta.cidade or '' }}" placeholder="Cidade">
+
+      <label>Estado</label>
+      <input type="text" name="estado" value="{{ proposta.estado or '' }}" placeholder="Estado">
+
+      <label>Banco</label>
+      <input type="text" name="banco" value="{{ proposta.banco or '' }}" placeholder="Nome do banco">
+
+      <label>Agência</label>
+      <input type="text" name="agencia" value="{{ proposta.agencia or '' }}" placeholder="Número da agência">
+
+      <label>Conta</label>
+      <input type="text" name="conta" value="{{ proposta.conta or '' }}" placeholder="Número da conta">
+
+      <label>Tabela Comercial</label>
+      <input type="text" name="tabela" value="{{ proposta.tabela or '' }}" placeholder="Nome da tabela">
+
+      <label>Valor da Proposta</label>
+      <input type="number" step="0.01" name="valor" value="{{ proposta.valor or '' }}" placeholder="0,00">
+
+      <div class="botoes">
+        <button type="submit" class="salvar"><i class="fa fa-save"></i> Salvar Alterações</button>
+        <a href="{{ url_for('esteira') }}"><button type="button" class="cancelar">Cancelar</button></a>
+      </div>
+
+    </form>
+  </div>
+</body>
+</html>
